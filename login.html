@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+    <meta name="theme-color" content="#e00000"/>
+    <meta name="mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+    <meta name="apple-mobile-web-app-title" content="ClubAlmacén"/>
+    <meta name="description" content="El fiado del barrio, ahora digital"/>
+    <title>ClubAlmacén</title>
+    <link rel="manifest" href="manifest.json"/>
+    <link rel="icon" href="logo_club_almacen_rojo.png"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <link rel="stylesheet" href="css/styles.css"/>
+    <link rel="stylesheet" href="css/store.css"/>
+    <style>
+        /* Auth centrado */
+        #authPage {
+            display: none;
+            min-height: 100vh;
+            justify-content: center;
+            align-items: center;
+            background: var(--background);
+            padding: 20px;
+        }
+        .auth-inner  { width: 100%; max-width: 420px; }
+        .auth-logo   { text-align: center; margin-bottom: 28px; }
+        .auth-logo img { height: 64px; }
+        .auth-logo h1  { font-size: 28px; font-weight: 800; color: var(--primary); margin: 10px 0 4px; }
+        .auth-logo p   { font-size: 14px; color: var(--text-light); margin: 0; }
+        .auth-card { background: white; border-radius: 24px; padding: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); }
+
+        /* Modo body */
+        body.auth-mode  #authPage      { display: flex  !important; }
+        body.auth-mode  #appHeader     { display: none  !important; }
+        body.auth-mode  #mainDashboard { display: none  !important; }
+        body.auth-mode  .chat-fab      { display: none  !important; }
+        body.auth-mode  .carrito-fab   { display: none  !important; }
+        body.app-mode   #authPage      { display: none  !important; }
+        body.app-mode   #appHeader     { display: flex  !important; }
+        body.app-mode   #mainDashboard { display: block !important; }
+        
+        /* Admin Dashboard */
+        #adminDashboard { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        #adminDashboard.visible { display: block; }
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .admin-grid { grid-template-columns: 1fr; } }
+    </style>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-firestore.js"></script>
+</head>
+<body class="auth-mode">
+
+<!-- AUTH -->
+<div id="authPage">
+    <div class="auth-inner">
+        <div class="auth-logo">
+            <img src="logo_club_almacen_rojo.png" alt="ClubAlmacén">
+            <h1>ClubAlmacén</h1>
+            <p>El fiado del barrio, ahora digital</p>
+        </div>
+        <div class="auth-card">
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" id="email" class="form-control" placeholder="tu@email.com" autocomplete="email"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Contraseña</label>
+                <input type="password" id="password" class="form-control" placeholder="••••••••" autocomplete="current-password"/>
+            </div>
+            <button class="btn btn-primary" id="loginButton" style="width:100%;padding:14px;font-size:15px;margin-bottom:12px">
+                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+            </button>
+            <p class="text-center" style="font-size:14px;color:var(--text-light)">
+                ¿No tenés cuenta? <a href="#" id="toggleSignupLink" style="color:var(--primary);font-weight:600">Registrate</a>
+            </p>
+            <div id="signupSection" class="hidden" style="margin-top:10px">
+                <button class="btn btn-secondary" id="signupButton" style="width:100%;padding:13px">
+                    <i class="fas fa-user-plus"></i> Crear Cuenta
+                </button>
+            </div>
+            <div id="statusMessage" class="text-center" style="margin-top:14px;font-size:13px;min-height:20px"></div>
+        </div>
+    </div>
+</div>
+
+<!-- HEADER -->
+<header class="app-header" id="appHeader">
+    <div class="logo-container">
+        <img src="logo_club_almacen_rojo.png" alt="ClubAlmacén"/>
+        <h1 class="app-title">ClubAlmacén</h1>
+    </div>
+    <div class="user-controls">
+        <div class="user-info">
+            <i class="fas fa-user-circle"></i>
+            <span id="userEmail">Usuario</span>
+            <span class="score-badge" id="scoreBadge">0 pts</span>
+        </div>
+        <div class="notif-bell-wrapper">
+            <button class="notif-bell-btn" onclick="toggleNotifPanel()">
+                <i class="fas fa-bell"></i>
+                <span class="notif-dot" id="notifDot"></span>
+            </button>
+            <div class="notif-panel" id="notifPanel">
+                <div class="notif-panel-header">
+                    <h3>Notificaciones</h3>
+                    <button class="notif-mark-all" onclick="marcarTodasLeidas()">Marcar leídas</button>
+                </div>
+                <div class="notif-list" id="notifList"><div class="notif-empty">Sin notificaciones</div></div>
+            </div>
+        </div>
+        <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> <span>Salir</span></button>
+    </div>
+</header>
+
+<!-- DASHBOARD -->
+<div id="mainDashboard">
+<div class="main-container">
+<div id="toastContainer" class="toast-container"></div>
+<div class="onboarding-overlay" id="onboardingOverlay"></div>
+
+<div class="notification-overlay" id="paymentNotification" style="display:none">
+    <div class="notification-content" style="text-align:center;color:white">
+        <div style="font-size:60px;margin-bottom:16px">🏆</div>
+        <h3 style="font-size:28px;font-weight:800;margin-bottom:10px">¡Felicidades!</h3>
+        <p id="notificationMessage" style="font-size:16px;margin-bottom:8px">Pago registrado</p>
+        <p style="font-size:22px;font-weight:800">+<span id="pointsEarned">10</span> puntos</p>
+        <button onclick="closeNotification()" style="margin-top:20px;background:rgba(255,255,255,0.25);color:white;border:2px solid white;padding:12px 28px;border-radius:50px;font-weight:700;cursor:pointer;font-size:14px">Continuar</button>
+    </div>
+</div>
+
+<!-- ===== CLIENTE ===== -->
+<div id="clienteDashboard" class="hidden">
+    <div class="dash-tabs">
+        <button class="dash-tab active" onclick="switchTab('cliente','inicio')"><i class="fas fa-home"></i> Inicio</button>
+        <button class="dash-tab" onclick="switchTab('cliente','tiendas')"><i class="fas fa-store"></i> Tiendas</button>
+        <button class="dash-tab" onclick="switchTab('cliente','vaquitas')"><i class="fas fa-hand-holding-heart"></i> Vaquitas</button>
+        <button class="dash-tab" onclick="switchTab('cliente','compras')"><i class="fas fa-shopping-bag"></i> Compras</button>
+        <button class="dash-tab" onclick="switchTab('cliente','pagos')"><i class="fas fa-money-bill-wave"></i> Pagos</button>
+        <button class="dash-tab" onclick="switchTab('cliente','cupones')"><i class="fas fa-ticket-alt"></i> Cupones</button>
+        <button class="dash-tab" onclick="switchTab('cliente','credito')"><i class="fas fa-credit-card"></i> Crédito</button>
+        <button class="dash-tab" onclick="switchTab('cliente','perfil')"><i class="fas fa-user"></i> Mi Perfil</button>
+        <button class="dash-tab" onclick="switchTab('cliente','electro')"><i class="fas fa-tv"></i> Electrodomésticos</button>
+    </div>
+
+    <!-- INICIO -->
+    <div class="tab-panel active" id="tab-cliente-inicio">
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-header"><h2 class="card-title"><i class="fas fa-chart-line"></i> Tu Scoring</h2></div>
+                <div class="score-meter">
+                    <div class="meter-bar"><div class="meter-fill" id="scoreFill" style="width:0%"></div></div>
+                    <div class="score-labels">
+                        <span class="score-label low">Bajo</span>
+                        <span class="score-label medium">Medio</span>
+                        <span class="score-label high">Alto</span>
+                    </div>
+                </div>
+                <div class="score-info" style="margin-top:10px">
+                    <div class="score-value" id="scoreValue">0</div>
+                    <div class="score-category" id="scoreCategory">Iniciando</div>
+                    <div class="score-description" id="scoreDescription">¡Comenzá a usar crédito!</div>
+                </div>
+                <div class="score-benefits" id="scoreBenefits"></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-credit-card"></i> Crédito</h2>
+                    <span class="card-badge">ACTIVO</span>
+                </div>
+                <div class="credit-card">
+                    <div class="stat-label" style="color:rgba(255,255,255,0.8)">LÍMITE TOTAL</div>
+                    <div class="credit-amount" id="totalCredit">$0.00</div>
+                    <div class="stat-label" style="color:rgba(255,255,255,0.8)">EN TODOS TUS COMERCIOS</div>
+                </div>
+                <div class="credit-details">
+                    <div class="detail-item"><span>Usado:</span><strong id="creditUsed">$0.00</strong></div>
+                    <div class="detail-item"><span>Disponible:</span><strong id="creditAvailable" style="color:var(--success)">$0.00</strong></div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-bolt"></i> Acciones rápidas</h2></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn btn-primary"   onclick="switchTab('cliente','tiendas')"><i class="fas fa-store"></i> Tiendas</button>
+                <button class="btn btn-primary"   onclick="switchTab('cliente','vaquitas')"><i class="fas fa-hand-holding-heart"></i> Vaquitas</button>
+                <button class="btn btn-secondary" onclick="switchTab('cliente','pagos')"><i class="fas fa-money-bill-wave"></i> Pagar</button>
+                <button class="btn btn-outline"   onclick="switchTab('cliente','cupones')"><i class="fas fa-ticket-alt"></i> Cupones</button>
+                <button class="btn btn-outline"   onclick="toggleChat()"><i class="fas fa-robot"></i> Alma</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TIENDAS -->
+    <div class="tab-panel" id="tab-cliente-tiendas">
+        <div id="tiendasListaView">
+            <div class="card" style="margin-bottom:16px">
+                <div class="card-header"><h2 class="card-title"><i class="fas fa-store"></i> Comercios disponibles</h2></div>
+                <p style="font-size:13.5px;color:var(--text-light)">Explorá los negocios, mirá ofertas y pedí por fiado.</p>
+            </div>
+            <div class="tiendas-grid" id="tiendasGrid">
+                <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-light)">
+                    <i class="fas fa-spinner fa-spin" style="font-size:28px;color:var(--primary)"></i>
+                </div>
+            </div>
+        </div>
+        <div id="tiendaPanel" style="display:none"></div>
+    </div>
+
+    <!-- VAQUITAS -->
+    <div class="tab-panel" id="tab-cliente-vaquitas">
+        <div class="card" style="margin-bottom:16px">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-hand-holding-heart"></i> Vaquitas</h2>
+                <button class="btn btn-primary" style="font-size:13px;padding:8px 16px" onclick="abrirModalVaquita()">
+                    <i class="fas fa-plus"></i> Nueva
+                </button>
+            </div>
+            <p style="font-size:13.5px;color:var(--text-light)">Organizá colectas entre amigos. Sin manejar plata.</p>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-utensils"></i> Ofertas de comidas</h2></div>
+            <div class="ofertas-comidas-grid" id="ofertasComidasGrid">
+                <div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-light)">
+                    <i class="fas fa-spinner fa-spin" style="font-size:24px;color:var(--primary)"></i>
+                </div>
+            </div>
+        </div>
+        <div class="vaquitas-grid" id="vaquitasGrid">
+            <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-light)">
+                <i class="fas fa-spinner fa-spin" style="font-size:28px;color:var(--primary)"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPRAS -->
+    <div class="tab-panel" id="tab-cliente-compras">
+        <div class="card">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-shopping-cart"></i> Nueva Compra</h2></div>
+            <p style="font-size:13px;color:var(--text-light);margin-bottom:14px">También podés pedir desde <strong>Tiendas</strong>.</p>
+            <button class="btn btn-primary" id="startPurchaseBtn" style="margin-bottom:16px">
+                <i class="fas fa-plus-circle"></i> Iniciar Compra
+            </button>
+            <div id="purchaseFlow" class="hidden">
+                <div class="form-group">
+                    <label class="form-label">Categoría</label>
+                    <div class="category-buttons">
+                        <button class="btn btn-outline" data-category="almacen"><i class="fas fa-store"></i> Almacén</button>
+                        <button class="btn btn-outline" data-category="verduleria"><i class="fas fa-carrot"></i> Verdulería</button>
+                        <button class="btn btn-outline" data-category="carniceria"><i class="fas fa-drumstick-bite"></i> Carnicería</button>
+                        <button class="btn btn-outline" data-category="farmacia"><i class="fas fa-pills"></i> Farmacia</button>
+                        <button class="btn btn-outline" data-category="electrodomesticos" id="electroBtn" disabled>
+                            <i class="fas fa-lock"></i> Electrodomésticos
+                        </button>
+                    </div>
+                </div>
+                <div id="merchantSection" class="hidden">
+                    <div class="form-group">
+                        <label class="form-label">Comercio</label>
+                        <select id="comercianteSelect" class="form-control"><option value="">Seleccionar...</option></select>
+                    </div>
+                </div>
+                <div id="itemsSection" class="hidden">
+                    <div class="form-group">
+                        <label class="form-label">Agregar producto</label>
+                        <div class="items-form-grid">
+                            <input type="text"   id="itemName"     class="form-control" placeholder="Nombre">
+                            <input type="number" id="itemPrice"    class="form-control" placeholder="Precio" step="0.01">
+                            <input type="number" id="itemQuantity" class="form-control" placeholder="Cant." value="1" min="1">
+                        </div>
+                        <button class="btn btn-outline" id="addItemBtn" style="width:100%;margin-top:8px">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </div>
+                    <div class="purchase-list" id="itemsList"></div>
+                    <div class="text-center" style="margin-top:16px">
+                        <div class="purchase-total-display">Total: $<span id="purchaseTotal">0.00</span></div>
+                        <button class="btn btn-primary" id="submitPurchaseBtn" style="margin-top:12px;padding:14px 32px">
+                            <i class="fas fa-paper-plane"></i> Enviar Compra
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-header"><h2 class="card-title"><i class="fas fa-clock"></i> Pendientes</h2></div>
+                <div class="purchase-list" id="pendingPurchasesList"><div class="no-items">Cargando...</div></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h2 class="card-title"><i class="fas fa-check-circle"></i> Aprobadas</h2></div>
+                <div class="purchase-list" id="approvedPurchasesList"><div class="no-items">Cargando...</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGOS -->
+    <div class="tab-panel" id="tab-cliente-pagos">
+        <div class="card">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-money-check-alt"></i> Pagar</h2></div>
+            <p style="color:var(--text-light);font-size:14px;margin-bottom:18px">Cada pago a tiempo sube tu scoring y desbloquea más beneficios.</p>
+            <button class="btn btn-primary" id="payBtn" style="padding:14px 28px;font-size:15px">
+                <i class="fas fa-credit-card"></i> Pagar mis compras
+            </button>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-history"></i> Historial de Pagos</h2></div>
+            <div class="purchase-list" id="paymentHistoryList"><div class="no-items">Cargando...</div></div>
+        </div>
+    </div>
+
+    <!-- CUPONES -->
+    <div class="tab-panel" id="tab-cliente-cupones">
+        <div class="card" style="margin-bottom:16px">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-ticket-alt"></i> Mis Cupones</h2>
+                <span class="card-badge">Exclusivos</span>
+            </div>
+            <p style="color:var(--text-light);font-size:13.5px">Más scoring = más cupones. Mostrá el código al comerciante.</p>
+        </div>
+        <div class="cupones-grid" id="cuponesGrid">
+            <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-light)">
+                <i class="fas fa-spinner fa-spin" style="font-size:28px;color:var(--primary)"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- CRÉDITO -->
+    <div class="tab-panel" id="tab-cliente-credito">
+        <div class="card">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-hand-holding-usd"></i> Mis Líneas de Crédito</h2></div>
+            <div class="purchase-list" id="misFiados"><div class="no-items">Cargando...</div></div>
+        </div>
+    </div>
+
+    <!-- PERFIL -->
+    <div class="tab-panel" id="tab-cliente-perfil">
+        <div class="card">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-user"></i> Mi Perfil</h2></div>
+            <div id="perfilUsuarioContainer"><div class="no-items">Cargando...</div></div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-wallet"></i> Mi Wallet</h2></div>
+            <div id="walletEditorContainer"><div class="no-items">Cargando...</div></div>
+        </div>
+    </div>
+
+    <!-- ELECTRODOMÉSTICOS -->
+    <div class="tab-panel" id="tab-cliente-electro">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-tv"></i> Catálogo de Electrodomésticos</h2>
+                <span class="card-badge">Scoring</span>
+            </div>
+            <p style="color:var(--text-light);font-size:13.5px">Desbloqueá productos con tu scoring. ¡Reclamá regalos o solicitá crédito!</p>
+            <div id="catalogoElectroContainer"></div>
+        </div>
+    </div>
+</div><!-- /clienteDashboard -->
+
+<!-- ===== COMERCIANTE ===== -->
+<div id="comercianteDashboard" class="hidden">
+    <div class="dash-tabs">
+        <button class="dash-tab active" onclick="switchTab('comerciante','inicio')"><i class="fas fa-home"></i> Inicio</button>
+        <button class="dash-tab" onclick="switchTab('comerciante','perfil')"><i class="fas fa-store"></i> Mi Negocio</button>
+        <button class="dash-tab" onclick="switchTab('comerciante','catalogo')"><i class="fas fa-tags"></i> Catálogo</button>
+        <button class="dash-tab" onclick="switchTab('comerciante','aprobaciones')"><i class="fas fa-clipboard-check"></i> Pedidos</button>
+        <button class="dash-tab" onclick="switchTab('comerciante','clientes')"><i class="fas fa-users"></i> Clientes</button>
+        <button class="dash-tab" onclick="switchTab('comerciante','historial')"><i class="fas fa-history"></i> Historial</button>
+        <button class="dash-tab" onclick="switchTab('comerciante','suscripcion')"><i class="fas fa-receipt"></i> Suscripción</button>
+        <button class="dash-tab" onclick="switchTab('comerciante','perfil-user')"><i class="fas fa-user"></i> Mi Perfil</button>
+        <button class="dash-tab" onclick="switchTab('comerciante','electro')"><i class="fas fa-tv"></i> Electrodomésticos</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-comerciante-inicio">
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-header"><h2 class="card-title"><i class="fas fa-chart-line"></i> Estadísticas</h2></div>
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-label">PENDIENTES</div><div class="stat-value" id="pendingCount">0</div></div>
+                    <div class="stat-card"><div class="stat-label">APROBADAS</div><div class="stat-value text-success" id="approvedCount">0</div></div>
+                    <div class="stat-card"><div class="stat-label">VENTAS</div><div class="stat-value" id="totalSales">$0</div></div>
+                    <div class="stat-card"><div class="stat-label">PAGOS PEND.</div><div class="stat-value text-warning" id="pendingPayments">0</div></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h2 class="card-title"><i class="fas fa-bolt"></i> Acciones rápidas</h2></div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                    <button class="btn btn-primary"   onclick="switchTab('comerciante','perfil')"><i class="fas fa-store"></i> Configurar mi negocio</button>
+                    <button class="btn btn-secondary" onclick="switchTab('comerciante','catalogo')"><i class="fas fa-tags"></i> Agregar productos</button>
+                    <button class="btn btn-outline"   onclick="switchTab('comerciante','aprobaciones')"><i class="fas fa-clipboard-check"></i> Ver pedidos</button>
+                    <button class="btn btn-outline"   onclick="switchTab('comerciante','suscripcion')"><i class="fas fa-receipt"></i> Cargo mensual</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-comerciante-perfil">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-store"></i> Perfil del negocio</h2>
+                <span class="card-badge">Visible para clientes</span>
+            </div>
+            <div id="perfilEditorContainer">
+                <div style="text-align:center;padding:32px;color:var(--text-light)">
+                    <i class="fas fa-spinner fa-spin" style="font-size:28px;color:var(--primary)"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-comerciante-catalogo">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-tags"></i> Catálogo</h2>
+                <button class="btn btn-primary" style="font-size:12px;padding:7px 14px" onclick="showOfertaForm()"><i class="fas fa-plus"></i> Nuevo</button>
+            </div>
+            <div id="ofertaFormContainer"></div>
+            <h3 style="font-size:14px;font-weight:700;margin:16px 0 12px">Mis productos publicados</h3>
+            <div id="ofertasAdminList" class="ofertas-admin-list">
+                <div style="text-align:center;padding:28px;color:var(--text-light)">
+                    <i class="fas fa-spinner fa-spin" style="font-size:24px;color:var(--primary)"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-comerciante-aprobaciones">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-clipboard-check"></i> Pedidos por aprobar <span class="card-badge" id="pendingBadge">0</span></h2>
+            </div>
+            <div class="purchase-list" id="purchasesToApprove"><div class="no-items">Cargando...</div></div>
+        </div>
+        <div class="card" style="margin-top:20px">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-money-bill-wave"></i> Pagos por aprobar <span class="card-badge" id="pendingPaymentsBadge">0</span></h2>
+            </div>
+            <div class="purchase-list" id="paymentsToApprove"><div class="no-items">Cargando...</div></div>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-comerciante-clientes">
+        <div class="card">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-hand-holding-usd"></i> Habilitar Crédito</h2></div>
+            <div id="buscadorClientesContainer"></div>
+            <div class="form-group">
+                <label class="form-label">O seleccioná de la lista</label>
+                <select id="clienteSelectComerciante" class="form-control"><option value="">Seleccionar...</option></select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Monto de crédito ($)</label>
+                <input type="number" id="montoFiado" class="form-control" placeholder="5000" step="100" min="0">
+            </div>
+            <button class="btn btn-primary" id="habilitarFiadoBtn"><i class="fas fa-check-circle"></i> Habilitar Crédito</button>
+        </div>
+        <div class="card" style="margin-top:20px">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-users"></i> Clientes con Crédito</h2></div>
+            <div class="purchase-list" id="clientesFiado"><div class="no-items">Cargando...</div></div>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-comerciante-historial">
+        <div class="card">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-history"></i> Historial de Compras</h2></div>
+            <div class="purchase-list" id="approvedPurchasesMerchantList"><div class="no-items">Cargando...</div></div>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-comerciante-suscripcion">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-receipt"></i> Suscripción</h2>
+                <span class="card-badge">5% mensual</span>
+            </div>
+            
+            <div id="suscripcionPanel">
+                <div class="no-items"><i class="fas fa-spinner fa-spin"></i> Calculando...</div>
+            </div>
+            
+        </div>
+        <div class="card" style="margin-top:20px">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-list-alt"></i> Historial de Cargos</h2></div>
+            <div id="historialCargos">
+                <div class="no-items">Cargando...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-comerciante-perfil-user">
+        <div class="card">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-user"></i> Mi Perfil Personal</h2></div>
+            <!-- ID ÚNICO PARA EL PERFIL DEL COMERCIANTE -->
+            <div id="perfilUsuarioContainerCom"><div class="no-items">Cargando...</div></div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2 class="card-title"><i class="fas fa-wallet"></i> Mi Wallet</h2></div>
+            <!-- ID ÚNICO PARA LA WALLET DEL COMERCIANTE -->
+            <div id="walletEditorContainerCom"><div class="no-items">Cargando...</div></div>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-comerciante-electro">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-tv"></i> Catálogo de Electrodomésticos</h2>
+                <span class="card-badge">Scoring</span>
+            </div>
+            <p style="color:var(--text-light);font-size:13.5px">Desbloqueá productos con tus ventas acumuladas. ¡Reclamá regalos o solicitá crédito!</p>
+            <div id="catalogoElectroContainer"></div>
+        </div>
+    </div>
+</div><!-- /comercianteDashboard -->
+
+<!-- ===== ADMINISTRADOR ===== -->
+<div id="adminDashboard" class="hidden">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-shield-alt"></i> Panel de Administración</h2>
+            <span class="card-badge">Club Almacén</span>
+        </div>
+        
+        <!-- ESTADÍSTICAS GENERALES -->
+        <div id="adminStatsContainer" class="card" style="box-shadow:none;border:1px solid var(--border);margin-bottom:16px">
+            <div class="card-header"><h2 class="card-title" style="font-size:16px"><i class="fas fa-chart-pie"></i> Estadísticas Generales</h2></div>
+            <div class="no-items"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>
+        </div>
+        
+        <div class="admin-grid">
+            <div class="card" style="box-shadow:none;border:1px solid var(--border)">
+                <div class="card-header"><h2 class="card-title" style="font-size:16px"><i class="fas fa-list-check"></i> Solicitudes de Crédito</h2></div>
+                <div id="solicitudesCreditoList"><div class="no-items">Cargando...</div></div>
+            </div>
+            <div class="card" style="box-shadow:none;border:1px solid var(--border)">
+                <div class="card-header"><h2 class="card-title" style="font-size:16px"><i class="fas fa-tv"></i> Catálogo de Electrodomésticos</h2></div>
+                <div id="catalogoElectroContainer"></div>
+            </div>
+        </div>
+        
+        <!-- NUEVO: COBROS A COMERCIANTES -->
+        <div class="card" style="box-shadow:none;border:1px solid var(--border);margin-top:16px">
+            <div class="card-header">
+                <h2 class="card-title" style="font-size:16px"><i class="fas fa-hand-holding-usd"></i> Cobros a Comerciantes (5%)</h2>
+                <span class="card-badge">Club Almacén</span>
+            </div>
+            <div id="adminCobrosContainer">
+                <div class="no-items"><i class="fas fa-spinner fa-spin"></i> Cargando deudas...</div>
+            </div>
+        </div>
+        
+        <div class="admin-grid" style="margin-top:16px">
+            <div class="card" style="box-shadow:none;border:1px solid var(--border)">
+                <div class="card-header"><h2 class="card-title" style="font-size:16px"><i class="fas fa-users"></i> Usuarios</h2></div>
+                <div id="adminUserListContainer"><div class="no-items">Cargando...</div></div>
+            </div>
+            <div class="card" style="box-shadow:none;border:1px solid var(--border)">
+                <div class="card-header"><h2 class="card-title" style="font-size:16px"><i class="fas fa-money-bill-wave"></i> Pagos Pendientes</h2></div>
+                <div id="adminPaymentsContainer"><div class="no-items">Cargando...</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div></div><!-- /main-container /mainDashboard -->
+
+<!-- MODALES -->
+<div class="modal-overlay" id="paymentModal" style="display:none">
+    <div class="modal-content">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-credit-card"></i> Pagar</h2>
+            <button id="closePaymentModalBtn" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-light)"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Compra a pagar</label>
+            <select id="purchaseToPaySelect" class="form-control"><option value="">Seleccionar compra</option></select>
+            <div id="purchaseDetails" class="hidden" style="margin-top:12px;background:var(--background);border-radius:12px;padding:14px">
+                <p style="margin:0 0 4px;font-size:14px"><strong>Total:</strong> $<span id="amountToPay">0.00</span></p>
+                <p style="margin:0;font-size:14px"><strong>Comercio:</strong> <span id="merchantToPay"></span></p>
+            </div>
+        </div>
+        <div class="payment-options">
+            <div class="payment-option" data-method="efectivo" id="efectivoOption">
+                <div class="payment-icon"><i class="fas fa-money-bill-wave"></i></div>
+                <h3>Efectivo</h3>
+                <p style="font-size:12px;color:var(--text-light)">En el local</p>
+            </div>
+            <div class="payment-option" data-method="transferencia" id="transferenciaOption">
+                <div class="payment-icon"><i class="fas fa-university"></i></div>
+                <h3>Transferencia</h3>
+                <p style="font-size:12px;color:var(--text-light)">Bancaria/billetera</p>
+            </div>
+        </div>
+        <div id="paymentDetailsSection" class="hidden">
+            <div id="efectivoDetails" class="hidden" style="background:rgba(0,200,83,0.06);border:1px solid rgba(0,200,83,0.2);border-radius:12px;padding:14px;font-size:14px">
+                <i class="fas fa-info-circle" style="color:var(--success);margin-right:6px"></i>
+                Acercate al comerciante para pagar en efectivo. Él aprobará el pago.
+            </div>
+            <div id="transferenciaDetails" class="hidden">
+                <div class="form-group" style="margin-top:12px">
+                    <label class="form-label">N° de Comprobante</label>
+                    <input type="text" id="comprobanteNumber" class="form-control" placeholder="TRX-123456">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Monto transferido ($)</label>
+                    <input type="number" id="paymentAmount" class="form-control" placeholder="0.00" step="0.01">
+                </div>
+                <button class="btn btn-primary" onclick="pagarConMercadoPago(window._comercianteAlias, parseFloat(document.getElementById('amountToPay').textContent))" style="width:100%;margin-top:8px;background:#00a650;">
+                    <i class="fas fa-mobile-alt"></i> Pagar con Mercado Pago
+                </button>
+            </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:18px">
+            <button class="btn btn-primary" id="confirmPaymentBtn" disabled style="padding:14px;font-size:15px">
+                <i class="fas fa-check"></i> Confirmar Pago
+            </button>
+            <button class="btn btn-outline" id="cancelPaymentBtn">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="roleModal" style="display:none">
+    <div class="modal-content" style="text-align:center;max-width:380px">
+        <div style="font-size:44px;margin-bottom:14px">👤</div>
+        <h2 style="font-size:22px;font-weight:800;margin-bottom:8px">Seleccioná tu Rol</h2>
+        <p style="color:var(--text-light);margin-bottom:24px;font-size:14px">¿Cómo vas a usar la plataforma?</p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+            <button class="btn btn-primary"   id="selectClienteBtn"     style="padding:14px;font-size:15px"><i class="fas fa-shopping-bag"></i> Soy Cliente</button>
+            <button class="btn btn-secondary" id="selectComercianteBtn" style="padding:14px;font-size:15px"><i class="fas fa-store"></i> Soy Comerciante</button>
+        </div>
+    </div>
+</div>
+
+<!-- Vaquita detalle/crear/aportar -->
+<div id="vaquitaDetalleOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;justify-content:center;align-items:center;z-index:1500;backdrop-filter:blur(5px);padding:20px"
+     onclick="if(event.target===this)this.style.display='none'"></div>
+
+<!-- Carrito -->
+<div class="carrito-overlay" id="carritoOverlay" onclick="cerrarCarrito()"></div>
+<div class="carrito-panel"   id="carritoPanel"></div>
+<button class="carrito-fab"  id="carritoFab" onclick="abrirCarrito()">
+    <i class="fas fa-shopping-cart"></i> Mi carrito
+    <span class="carrito-count" id="carritoCount">0</span>
+</button>
+
+<!-- Modal producto -->
+<div id="productoModalOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;justify-content:center;align-items:flex-end;z-index:1050;backdrop-filter:blur(3px)"
+     onclick="if(event.target===this)cerrarProductoModal()"></div>
+
+<!-- Chat IA -->
+<button class="chat-fab" onclick="toggleChat()">🤖<span class="fab-dot"></span></button>
+<div class="chat-window" id="chatWindow">
+    <div class="chat-header">
+        <div class="chat-avatar">🤖</div>
+        <div class="chat-header-info">
+            <h4>Alma – Asistente IA</h4>
+            <span>● En línea</span>
+        </div>
+        <button class="chat-close-btn" onclick="closeChat()">✕</button>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-quick-btns">
+        <button class="chat-quick-btn" onclick="quickQuestion('fiado')">Fiado</button>
+        <button class="chat-quick-btn" onclick="quickQuestion('scoring')">Scoring</button>
+        <button class="chat-quick-btn" onclick="quickQuestion('pago')">¿Cómo pago?</button>
+        <button class="chat-quick-btn" onclick="quickQuestion('cupones')">Cupones</button>
+        <button class="chat-quick-btn" onclick="quickQuestion('vaquita')">Vaquitas</button>
+    </div>
+    <div class="chat-input-row">
+        <input type="text" class="chat-input" id="chatInput" placeholder="Escribí tu consulta..." onkeydown="handleChatKeydown(event)">
+        <button class="chat-send-btn" onclick="sendChatMessage(document.getElementById('chatInput').value)">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+<!-- PWA Banner -->
+<div class="pwa-banner" id="pwaBanner">
+    <img src="logo_club_almacen_rojo.png" class="pwa-banner-logo" alt="Club Almacén">
+    <div class="pwa-banner-text">
+        <h4>Instalá ClubAlmacén</h4>
+        <p>Accedé más rápido desde tu pantalla de inicio</p>
+    </div>
+    <div class="pwa-banner-actions">
+        <button class="btn btn-primary" id="pwaInstallBtn" style="font-size:13px;padding:8px 16px">Instalar</button>
+        <button class="pwa-dismiss" id="pwaDismissBtn">✕</button>
+    </div>
+</div>
+
+<!-- Scripts — orden crítico -->
+<script src="js/firebase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/features.js"></script>
+<script src="js/store.js"></script>
+<script src="js/vaquitas.js"></script>
+<script src="js/wallet.js"></script>
+<script src="js/scoring.js"></script>
+
+<script>
+// TAB SWITCHER
+function switchTab(role, tabName) {
+    const prefix = `tab-${role}-`;
+    document.querySelectorAll(`[id^="${prefix}"]`).forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(`${prefix}${tabName}`);
+    if (target) target.classList.add('active');
+    document.querySelectorAll(`#${role}Dashboard .dash-tab`).forEach(t => {
+        t.classList.toggle('active', (t.getAttribute('onclick')||'').includes(`'${tabName}'`));
+    });
+
+    const uid = firebase.auth().currentUser?.uid;
+    if (!uid) return;
+
+    const actions = {
+        'cliente-tiendas':          () => { if(typeof initStoreCliente==='function') initStoreCliente(); },
+        'cliente-vaquitas':         () => { if(typeof initVaquitas==='function') initVaquitas(); },
+        'cliente-cupones':          () => { const s=parseInt(document.getElementById('scoreValue')?.textContent)||300; if(typeof loadCupones==='function') loadCupones(s); },
+        'cliente-perfil':           () => { if(typeof renderPerfilUsuario==='function') renderPerfilUsuario(uid, {email:firebase.auth().currentUser?.email}); if(typeof renderWalletEditor==='function') renderWalletEditor(uid); },
+        'cliente-electro':          () => { if(typeof loadCatalogoElectro==='function') loadCatalogoElectro(false); },
+        'comerciante-perfil':       () => { if(typeof loadPerfilComerciante==='function') loadPerfilComerciante(uid); },
+        'comerciante-catalogo':     () => { if(typeof loadOfertasComerciante==='function'){ loadOfertasComerciante(uid); if(!document.getElementById('ofertaFormContainer').children.length && typeof showOfertaForm==='function') showOfertaForm(); } },
+        'comerciante-aprobaciones': () => { loadPurchasesToApprove(uid); loadPaymentsToApprove(uid); },
+        'comerciante-historial':    () => loadApprovedPurchasesMerchant(uid),
+        'comerciante-clientes':     () => { loadClientesFiado(uid); cargarClientes(); if(typeof renderBuscadorClientes==='function') renderBuscadorClientes(); },
+        'comerciante-suscripcion':  () => { if(typeof loadSuscripcionPanel==='function') loadSuscripcionPanel(uid); },
+        'comerciante-perfil-user':  () => { if(typeof renderPerfilUsuario==='function') renderPerfilUsuario(uid, {email:firebase.auth().currentUser?.email}); if(typeof renderWalletEditor==='function') renderWalletEditor(uid); },
+        'comerciante-electro':      () => { if(typeof loadCatalogoElectro==='function') loadCatalogoElectro(false); },
+    };
+    const fn = actions[`${role}-${tabName}`];
+    if (fn) fn();
+}
+
+// Cerrar notif panel al click fuera
+document.addEventListener('click', e => {
+    const panel = document.getElementById('notifPanel');
+    const bell  = document.querySelector('.notif-bell-wrapper');
+    if (panel && !bell?.contains(e.target)) panel.classList.remove('open');
+});
+
+// PWA
+let deferredPrompt = null;
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+        .then(r => console.log('✅ SW registrado'))
+        .catch(e => console.warn('SW:', e));
+}
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); deferredPrompt = e;
+    if (!localStorage.getItem('pwa_dismissed'))
+        document.getElementById('pwaBanner')?.classList.add('visible');
+});
+document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('pwaBanner')?.classList.remove('visible');
+});
+document.getElementById('pwaDismissBtn')?.addEventListener('click', () => {
+    document.getElementById('pwaBanner')?.classList.remove('visible');
+    localStorage.setItem('pwa_dismissed','1');
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.payment-option').forEach(o => {
+        o.addEventListener('click', () => selectPaymentMethod(o.dataset.method));
+    });
+});
+</script>
+</body>
+</html>

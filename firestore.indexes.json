@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    { "collectionGroup": "purchases", "queryScope": "COLLECTION",
+      "fields": [{"fieldPath":"clienteId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"}] },
+    { "collectionGroup": "purchases", "queryScope": "COLLECTION",
+      "fields": [{"fieldPath":"comercianteId","order":"ASCENDING"},{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"}] },
+    { "collectionGroup": "purchases", "queryScope": "COLLECTION",
+      "fields": [{"fieldPath":"comercianteId","order":"ASCENDING"},{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"approvedAt","order":"DESCENDING"}] },
+    { "collectionGroup": "payments", "queryScope": "COLLECTION",
+      "fields": [{"fieldPath":"userId","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"}] },
+    { "collectionGroup": "payments", "queryScope": "COLLECTION",
+      "fields": [{"fieldPath":"comercianteId","order":"ASCENDING"},{"fieldPath":"approved","order":"ASCENDING"},{"fieldPath":"rejected","order":"ASCENDING"}] },
+    { "collectionGroup": "vaquitas", "queryScope": "COLLECTION",
+      "fields": [{"fieldPath":"activa","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"}] },
+    { "collectionGroup": "notificaciones", "queryScope": "COLLECTION",
+      "fields": [{"fieldPath":"userId","order":"ASCENDING"},{"fieldPath":"leida","order":"ASCENDING"}] },
+    { "collectionGroup": "notificaciones", "queryScope": "COLLECTION",
+      "fields": [{"fieldPath":"userId","order":"ASCENDING"},{"fieldPath":"fecha","order":"DESCENDING"}] }
+  ],
+  "fieldOverrides": []
+}

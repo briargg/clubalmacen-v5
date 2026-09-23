@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Perfiles de comercios: lectura pública
+    match /perfilesComercios/{comercianteId} {
+      allow read:  if true;
+      allow write: if request.auth != null && request.auth.uid == comercianteId;
+      match /ofertas/{ofertaId} {
+        allow read:  if true;
+        allow write: if request.auth != null && request.auth.uid == comercianteId;
+      }
+    }
+
+    // Vaquitas: lectura pública (para links compartidos)
+    match /vaquitas/{vaquitaId} {
+      allow read:   if true;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (
+        resource.data.creadorId == request.auth.uid ||
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['montoRecaudado','participantes','updatedAt'])
+      );
+      allow delete: if request.auth != null && resource.data.creadorId == request.auth.uid;
+      match /aportes/{aporteId} {
+        allow read:   if true;
+        allow create: if request.auth != null;
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+
+    // Todo lo demás: cualquier usuario autenticado
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

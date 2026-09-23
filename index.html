@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="theme-color" content="#e00000"/>
+    <meta name="description" content="Club Almacén – El fiado del barrio, ahora digital"/>
+    <title>ClubAlmacén</title>
+    <link rel="manifest" href="manifest.json"/>
+    <link rel="icon" href="logo_club_almacen_rojo.png"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:system-ui,sans-serif;background:#f5f7fa;color:#1a1a1a}
+        nav{background:white;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 10px rgba(0,0,0,0.06);position:sticky;top:0;z-index:10}
+        .nav-logo{display:flex;align-items:center;gap:10px}
+        .nav-logo img{height:36px}
+        .nav-logo span{font-size:18px;font-weight:800;color:#e00000}
+        .btn-nav{background:linear-gradient(135deg,#e00000,#ff3333);color:white;padding:10px 22px;border-radius:50px;text-decoration:none;font-weight:700;font-size:14px}
+        .hero{padding:72px 24px 56px;text-align:center;max-width:800px;margin:0 auto}
+        .hero h1{font-size:clamp(26px,5vw,46px);font-weight:800;line-height:1.2;margin-bottom:16px}
+        .hero h1 span{color:#e00000}
+        .hero p{font-size:17px;color:#666;margin-bottom:32px;max-width:520px;margin-left:auto;margin-right:auto}
+        .hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+        .btn-primary{background:linear-gradient(135deg,#e00000,#ff3333);color:white;padding:14px 30px;border-radius:50px;text-decoration:none;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(224,0,0,0.3)}
+        .btn-secondary{background:white;color:#e00000;border:2px solid #e00000;padding:12px 28px;border-radius:50px;text-decoration:none;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:8px}
+        .features{padding:56px 24px;background:white}
+        .features h2{text-align:center;font-size:28px;font-weight:800;margin-bottom:40px}
+        .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;max-width:1100px;margin:0 auto}
+        .feature-card{background:#f5f7fa;border-radius:16px;padding:24px;transition:transform 0.2s}
+        .feature-card:hover{transform:translateY(-4px)}
+        .feature-icon{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#e00000,#ff3333);color:white;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px}
+        .feature-card h3{font-size:15px;font-weight:700;margin-bottom:6px}
+        .feature-card p{font-size:13px;color:#666;line-height:1.6}
+        .cta{padding:64px 24px;text-align:center;background:linear-gradient(135deg,#e00000,#ff3333);color:white}
+        .cta h2{font-size:28px;font-weight:800;margin-bottom:12px}
+        .cta p{font-size:15px;opacity:0.9;margin-bottom:26px}
+        .btn-white{background:white;color:#e00000;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:800;font-size:15px;display:inline-flex;align-items:center;gap:8px}
+        footer{text-align:center;padding:24px;font-size:13px;color:#666}
+        footer a{color:#e00000;font-weight:600;text-decoration:none}
+    </style>
+</head>
+<body>
+<nav>
+    <div class="nav-logo">
+        <img src="logo_club_almacen_rojo.png" alt="ClubAlmacén">
+        <span>ClubAlmacén</span>
+    </div>
+    <a href="login.html" class="btn-nav">Ingresar</a>
+</nav>
+
+<section class="hero">
+    <h1>El fiado del barrio,<br><span>ahora digital</span></h1>
+    <p>Comprá fiado en tus comercios de confianza, pagá cuando puedas y desbloqueá beneficios con tu scoring.</p>
+    <div class="hero-btns">
+        <a href="login.html" class="btn-primary"><i class="fas fa-rocket"></i> Empezar ahora</a>
+        <a href="#como-funciona" class="btn-secondary"><i class="fas fa-play"></i> Cómo funciona</a>
+    </div>
+</section>
+
+<section class="features" id="como-funciona">
+    <h2>Todo en una sola app</h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-shopping-bag"></i></div>
+            <h3>Fiado digital</h3>
+            <p>Comprá en tus comercios sin pagar en el momento. Crédito habilitado por cada comerciante.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+            <h3>Scoring de crédito</h3>
+            <p>Pagá a tiempo y subí tu puntaje para acceder a más rubros y mayores límites.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-store"></i></div>
+            <h3>Tiendas online</h3>
+            <p>Mirá el catálogo de cada comercio y hacé tu pedido directo desde la app.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-hand-holding-heart"></i></div>
+            <h3>Vaquitas</h3>
+            <p>Organizá asados y colectas con amigos. Compartí el link y sumá aportes.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-ticket-alt"></i></div>
+            <h3>Cupones exclusivos</h3>
+            <p>Desbloqueá descuentos especiales en comercios adheridos según tu scoring.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-robot"></i></div>
+            <h3>Alma, tu asistente</h3>
+            <p>Resolvé dudas al instante con nuestro asistente virtual disponible 24hs.</p>
+        </div>
+    </div>
+</section>
+
+<section class="cta">
+    <h2>Sumate a Club Almacén</h2>
+    <p>Es gratis para clientes y comerciantes. Empezá hoy.</p>
+    <a href="login.html" class="btn-white"><i class="fas fa-arrow-right"></i> Crear mi cuenta</a>
+</section>
+
+<footer>
+    <p>© 2025 Club Almacén &nbsp;·&nbsp; <a href="login.html">Iniciar sesión</a></p>
+</footer>
+</body>
+</html>
