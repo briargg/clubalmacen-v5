@@ -201,6 +201,10 @@
                 <div class="card-header"><h2 class="card-title"><i class="fas fa-store"></i> Comercios disponibles</h2></div>
                 <p style="font-size:13.5px;color:var(--text-light)">Explorá los negocios, mirá ofertas y pedí por fiado.</p>
             </div>
+            <div class="card" style="margin-bottom:16px">
+                <div class="card-header"><h2 class="card-title"><i class="fas fa-search"></i> Buscar tu comercio</h2></div>
+                <div id="buscadorComerciosContainer"></div>
+            </div>
             <div class="tiendas-grid" id="tiendasGrid">
                 <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-light)">
                     <i class="fas fa-spinner fa-spin" style="font-size:28px;color:var(--primary)"></i>
@@ -510,7 +514,7 @@
                 <span class="card-badge">Scoring</span>
             </div>
             <p style="color:var(--text-light);font-size:13.5px">Desbloqueá productos con tus ventas acumuladas. ¡Reclamá regalos o solicitá crédito!</p>
-            <div id="catalogoElectroContainer"></div>
+            <div id="catalogoElectroContainerCom"></div>
         </div>
     </div>
 </div><!-- /comercianteDashboard -->
@@ -536,7 +540,7 @@
             </div>
             <div class="card" style="box-shadow:none;border:1px solid var(--border)">
                 <div class="card-header"><h2 class="card-title" style="font-size:16px"><i class="fas fa-tv"></i> Catálogo de Electrodomésticos</h2></div>
-                <div id="catalogoElectroContainer"></div>
+                <div id="catalogoElectroContainerAdmin"></div>
             </div>
         </div>
         
@@ -697,6 +701,7 @@
 <script src="js/store.js"></script>
 <script src="js/vaquitas.js"></script>
 <script src="js/wallet.js"></script>
+<script src="js/directorio.js"></script>
 <script src="js/scoring.js"></script>
 
 <script>
@@ -714,11 +719,11 @@ function switchTab(role, tabName) {
     if (!uid) return;
 
     const actions = {
-        'cliente-tiendas':          () => { if(typeof initStoreCliente==='function') initStoreCliente(); },
+        'cliente-tiendas':          () => { if(typeof initStoreCliente==='function') initStoreCliente(); if(typeof initDirectorio==='function') initDirectorio(); },
         'cliente-vaquitas':         () => { if(typeof initVaquitas==='function') initVaquitas(); },
         'cliente-cupones':          () => { const s=parseInt(document.getElementById('scoreValue')?.textContent)||300; if(typeof loadCupones==='function') loadCupones(s); },
         'cliente-perfil':           () => { if(typeof renderPerfilUsuario==='function') renderPerfilUsuario(uid, {email:firebase.auth().currentUser?.email}); if(typeof renderWalletEditor==='function') renderWalletEditor(uid); },
-        'cliente-electro':          () => { if(typeof loadCatalogoElectro==='function') loadCatalogoElectro(false); },
+        'cliente-electro':          () => { if(typeof loadCatalogoElectro==='function') loadCatalogoElectro(false, 'catalogoElectroContainer'); },
         'comerciante-perfil':       () => { if(typeof loadPerfilComerciante==='function') loadPerfilComerciante(uid); },
         'comerciante-catalogo':     () => { if(typeof loadOfertasComerciante==='function'){ loadOfertasComerciante(uid); if(!document.getElementById('ofertaFormContainer').children.length && typeof showOfertaForm==='function') showOfertaForm(); } },
         'comerciante-aprobaciones': () => { loadPurchasesToApprove(uid); loadPaymentsToApprove(uid); },
@@ -726,7 +731,7 @@ function switchTab(role, tabName) {
         'comerciante-clientes':     () => { loadClientesFiado(uid); cargarClientes(); if(typeof renderBuscadorClientes==='function') renderBuscadorClientes(); },
         'comerciante-suscripcion':  () => { if(typeof loadSuscripcionPanel==='function') loadSuscripcionPanel(uid); },
         'comerciante-perfil-user':  () => { if(typeof renderPerfilUsuario==='function') renderPerfilUsuario(uid, {email:firebase.auth().currentUser?.email}); if(typeof renderWalletEditor==='function') renderWalletEditor(uid); },
-        'comerciante-electro':      () => { if(typeof loadCatalogoElectro==='function') loadCatalogoElectro(false); },
+        'comerciante-electro':      () => { if(typeof loadCatalogoElectro==='function') loadCatalogoElectro(false, 'catalogoElectroContainerCom'); },
     };
     const fn = actions[`${role}-${tabName}`];
     if (fn) fn();

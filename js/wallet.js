@@ -9,15 +9,35 @@ function pagarConMercadoPago(alias, monto, concepto) {
     setTimeout(() => window.open(mpUrl,'_blank'), 500);
 }
 
+// CORREGIDO: antes escribía en `cargosAcumulados/{uid}-{mesKey}` con un
+// campo `pagoIniciado` que nadie más lee — mientras que el botón "Ya
+// transferí / pagué en efectivo" (pagarSuscripcion(), en store.js) escribe
+// en `cargosMantenimiento` con otra forma de documento. Dos boletos de pago
+// que nunca se juntaban: el panel de admin (loadCargosMantenimientoAdmin,
+// en features.js) solo lee cargosMantenimiento, así que un pago hecho por
+// MP quedaba invisible para el admin. Ahora escribe en la misma colección
+// que el otro método, con los mismos campos, para que el admin tenga UNA
+// sola cola de confirmaciones.
+// También le agregué un valor por defecto al alias: si window.ALIAS_CLUB_ALMACEN
+// no está declarado en ningún otro archivo (firebase.js, auth.js, etc.), antes
+// el link de Mercado Pago se armaba con "alias=undefined".
 function pagarSuscripcionMP(monto) {
     const user = firebase.auth().currentUser;
     if (!user) return;
     if (!confirm(`¿Pagar $${parseFloat(monto).toFixed(2)} a Club Almacén?\nSe abrirá Mercado Pago con el monto precargado.`)) return;
-    const mpUrl = `https://mpago.la/cobrar?alias=${encodeURIComponent(window.ALIAS_CLUB_ALMACEN)}&amount=${parseFloat(monto).toFixed(2)}`;
-    const mesKey = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
-    db.collection('cargosAcumulados').doc(`${user.uid}-${mesKey}`)
-        .set({ pagoIniciado:true, pagoIniciadoAt:new Date().toISOString() }, { merge:true })
-        .catch(e=>console.warn(e));
+
+    const alias = window.ALIAS_CLUB_ALMACEN || 'sariluh16.mp'; // TODO: confirmar que este es tu alias real
+    const mpUrl = `https://mpago.la/cobrar?alias=${encodeURIComponent(alias)}&amount=${parseFloat(monto).toFixed(2)}`;
+
+    db.collection('cargosMantenimiento').add({
+        comercianteId: user.uid,
+        monto: parseFloat(monto),
+        fecha: new Date().toISOString(),
+        pagado: false,
+        mes: new Date().toLocaleDateString('es-AR', { month:'long', year:'numeric' }),
+        metodo: 'mercadopago'
+    }).catch(e => console.warn('pagarSuscripcionMP (registro):', e));
+
     showToast('Abriendo Mercado Pago para pagar a Club Almacén...','info',3000);
     setTimeout(() => window.open(mpUrl,'_blank'), 600);
 }
@@ -214,11 +234,30 @@ function seleccionarClienteBuscado(id, email, nombre) {
     if (window._onSelectCliente) window._onSelectCliente(id, email, nombre);
 }
 
-async function renderPerfilUsuario(userId, userData) {
-    // DETECTAR SI ES COMERCIANTE Y USAR EL ID CORRECTO
+// CORREGIDO: tu HTML llama a esto como
+// renderPerfilUsuario(uid, {email: firebase.auth().currentUser?.email}) —
+// un objeto con SOLO el email, sin role/wallet/nombreDisplay/nombreUsuario/
+// ubicación. Como la función confiaba en que el que llama le pasa el
+// documento completo, dos cosas se rompían siempre: (1) nunca detectaba
+// role==='comerciante', así que el perfil del comerciante se renderizaba
+// siempre en el contenedor de CLIENTE (perfilUsuarioContainer), nunca en el
+// suyo (perfilUsuarioContainerCom); y (2) todos los campos (nombre, alias,
+// ubicación) se mostraban vacíos aunque estuvieran guardados en Firestore,
+// porque nunca se leía el documento real. Ahora busca sus propios datos,
+// igual que ya hace renderWalletEditor — el segundo parámetro queda como
+// fallback opcional por si alguna vez lo llamás ya con los datos a mano.
+async function renderPerfilUsuario(userId, userDataParcial) {
+    let userData = userDataParcial || {};
+    try {
+        const doc = await db.collection(COL.USERS).doc(userId).get();
+        if (doc.exists) userData = { ...userData, ...doc.data() };
+    } catch (e) {
+        console.warn('renderPerfilUsuario: no se pudo leer el documento real, usando datos parciales', e);
+    }
+
     const user = firebase.auth().currentUser;
     let containerId = 'perfilUsuarioContainer'; // Default para cliente
-    if (user && userData && userData.role === 'comerciante') {
+    if (userData.role === 'comerciante') {
         containerId = 'perfilUsuarioContainerCom';
     }
     const container = document.getElementById(containerId);
@@ -301,4 +340,4 @@ window.guardarNombreUsuario    = guardarNombreUsuario;
 window.renderPerfilUsuario     = renderPerfilUsuario;
 window.guardarPerfilCompleto   = guardarPerfilCompleto;
 window.enviarEmailVerificacion = enviarEmailVerificacion;
-console.log('✅ wallet.js V5 cargado');
+console.log('✅ wallet.js V5 cargado (pagarSuscripcionMP unificado con cargosMantenimiento, renderPerfilUsuario autosuficiente)');
