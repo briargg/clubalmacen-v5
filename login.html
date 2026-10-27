@@ -53,13 +53,15 @@
             box-shadow: 0 0 40px rgba(0,0,0,0.1); /* Sombra para que resalte en la compu */
         }
 
-        /* Si es compu, le damos bordes redondeados y un alto máximo */
+                /* Si es compu, le damos bordes redondeados y un alto máximo */
         @media (min-width: 481px) {
             .login-container {
                 border-radius: 30px;
-                height: 90vh;
-                min-height: auto;
-         overflow: hidden;       
+                height: auto;       /* Dejamos que crezca según el contenido */
+                min-height: 700px;  /* Altura mínima para que entren todos los botones */
+                max-height: 95vh;   /* Que no se pase del alto de la pantalla */
+                overflow-y: auto;   /* Si no entra, aparece barra de scroll */
+                overflow-x: hidden;
             }
         }
 
