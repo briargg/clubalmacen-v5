@@ -47,7 +47,7 @@ body {
     align-items: center;
     gap: 15px;
 }
-.logo-container img { height: 50px; width: auto; }
+.logo-container img { height: 50px; width: 50px; object-fit: contain; }
 .app-title { font-size: 24px; font-weight: 700; color: var(--primary); }
 
 .user-controls {

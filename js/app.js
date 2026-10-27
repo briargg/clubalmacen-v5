@@ -5,7 +5,7 @@
 
 const AppState = {
     purchase: { category: '', comercianteId: '', items: [], total: 0 },
-    payment:  { selectedMethod: null, purchaseId: null },
+    payment:  { selectedMethod: null, purchaseId: null, totalAmount: 0, comercianteId: '' },
     scoring:  { score: 0, category: 'low' },
 };
 
@@ -37,15 +37,14 @@ async function loadUserScoring(userId) {
                             electroBtn.innerHTML = '<i class="fas fa-lock"></i> Electrodomésticos (Score Alto)';
                         }
                     }
-                    console.log("Scoring actualizado en tiempo real:", data);
                 } else {
                     _initScoring(userId);
                 }
             }, (error) => {
-                console.error("Error al escuchar scoring:", error);
+                console.warn("Aviso: no se pudo leer el scoring en tiempo real:", error.message);
             });
     } catch (error) {
-        console.error("Error al cargar scoring:", error);
+        console.warn("Error al cargar scoring:", error);
     }
 }
 
@@ -106,12 +105,6 @@ async function noPuedoPagar(purchaseId, motivo) {
 // ============================================
 // RENDER DE LISTA DE COMPRAS
 // ============================================
-// CORRECCIÓN: esta función estaba definida DOS VECES en el archivo original.
-// La segunda definición (más simple, sin vencimiento ni botón "No puedo pagar")
-// pisaba a esta —la completa— porque en JS la última función declarada con el
-// mismo nombre gana. Eso hacía desaparecer silenciosamente el botón "No puedo
-// pagar" y la fecha de vencimiento en la lista de compras del cliente.
-// Se deja UNA sola versión (la completa) y se elimina el duplicado de más abajo.
 
 function _renderPurchaseList(containerId, items, showPayBtn) {
     const el = document.getElementById(containerId);
@@ -182,11 +175,7 @@ async function loadComerciantes() {
         const select = document.getElementById('comercianteSelect');
         if (!select) return;
         select.innerHTML = '<option value="">Seleccionar Comercio</option>';
-
-        const perfiles = await Promise.all(snap.docs.map(d =>
-            db.collection(COL.PERFILES_COMERCIOS).doc(d.id).get()
-        ));
-
+        const perfiles = await Promise.all(snap.docs.map(d => db.collection(COL.PERFILES_COMERCIOS).doc(d.id).get()));
         snap.docs.forEach((doc, i) => {
             const perfil = perfiles[i].exists ? perfiles[i].data() : null;
             const opt = document.createElement('option');
@@ -194,19 +183,13 @@ async function loadComerciantes() {
             opt.textContent = perfil?.nombre || doc.data().email;
             select.appendChild(opt);
         });
-
         select.onchange = e => {
             if (!e.target.value) return;
             AppState.purchase.comercianteId = e.target.value;
             const is = document.getElementById('itemsSection');
             if (is) { is.classList.remove('hidden'); is.style.display = 'block'; }
         };
-    } catch (e) {
-        // Si esto falla con "Missing or insufficient permissions" es el problema
-        // de reglas de Firestore (ver firestore.rules) — el cliente se queda sin
-        // poder elegir comercio y por lo tanto sin poder comprar.
-        console.error('loadComerciantes:', e); showToast('Error al cargar comercios','error');
-    }
+    } catch (e) { console.error('loadComerciantes:', e); showToast('Error al cargar comercios','error'); }
 }
 
 function addItemToList() {
@@ -237,9 +220,7 @@ function _renderItemsList() {
             <div class="purchase-info"><h4>${it.name}</h4><p>${it.quantity} × $${it.price.toFixed(2)}</p></div>
             <div style="display:flex;align-items:center;gap:10px">
                 <span class="purchase-total">$${it.total.toFixed(2)}</span>
-                <button class="btn btn-outline" onclick="removeItem(${i})" style="padding:6px 10px">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <button class="btn btn-outline" onclick="removeItem(${i})" style="padding:6px 10px"><i class="fas fa-trash"></i></button>
             </div>
         </div>`).join('');
     totalEl.textContent = AppState.purchase.total.toFixed(2);
@@ -265,22 +246,14 @@ async function submitPurchase() {
         if (sb) sb.style.display = 'block';
         _renderItemsList();
         loadClientPurchases(user.uid);
-    } catch (e) {
-        // "Missing or insufficient permissions" acá = las reglas no dejan
-        // crear en /purchases; ver firestore.rules.
-        showToast(`Error: ${e.message}`,'error');
-    }
+    } catch (e) { showToast(`Error: ${e.message}`,'error'); }
     finally { setButtonLoading('submitPurchaseBtn', false); }
 }
 
 async function loadClientPurchases(clienteId) {
     try {
-        const snap = await db.collection(COL.PURCHASES)
-            .where('clienteId','==', clienteId).get();
-
-        const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-            .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
-
+        const snap = await db.collection(COL.PURCHASES).where('clienteId','==', clienteId).get();
+        const all = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
         _renderPurchaseList('pendingPurchasesList',  all.filter(p => p.status === 'pending'),  false);
         _renderPurchaseList('approvedPurchasesList', all.filter(p => p.status === 'approved'), true);
     } catch (e) { console.error('loadClientPurchases:', e); }
@@ -300,17 +273,12 @@ async function loadMyFiados(clienteId) {
                 .then(f => f.exists ? { comercianteId:d.id, email:d.data().email, ...f.data() } : null)
         ));
         const fiados = checks.filter(Boolean);
-
-        if (fiados.length === 0) {
-            el.innerHTML = '<div class="no-items">No tenés créditos habilitados aún</div>'; return;
-        }
-
+        if (fiados.length === 0) { el.innerHTML = '<div class="no-items">No tenés créditos habilitados aún</div>'; return; }
         let totalLimit = 0, totalUsed = 0;
         fiados.forEach(f => { totalLimit += f.monto_fiado||0; totalUsed += f.usado||0; });
-        _setEl('totalCredit',    `$${totalLimit.toFixed(2)}`);
-        _setEl('creditUsed',     `$${totalUsed.toFixed(2)}`);
+        _setEl('totalCredit', `$${totalLimit.toFixed(2)}`);
+        _setEl('creditUsed', `$${totalUsed.toFixed(2)}`);
         _setEl('creditAvailable',`$${(totalLimit-totalUsed).toFixed(2)}`);
-
         el.innerHTML = fiados.map(f => {
             const disp = (f.monto_fiado||0) - (f.usado||0);
             const pct  = f.monto_fiado > 0 ? (f.usado/f.monto_fiado*100) : 0;
@@ -342,37 +310,47 @@ async function loadMyFiados(clienteId) {
 async function openPaymentModal() {
     const user = requireAuth();
     try {
-        const snap = await db.collection(COL.PURCHASES)
-            .where('clienteId','==', user.uid)
-            .where('status','==','approved')
-            .get();
-
-        const sinPagar = snap.docs.filter(d => !d.data().paid);
+        const snap = await db.collection(COL.PURCHASES).where('clienteId','==', user.uid).get();
+        const sinPagar = snap.docs.filter(d => {
+            const data = d.data();
+            const esAprobada = data.status === 'approved' && !data.paid;
+            const esTiendaPendiente = data.category === 'tienda-pago' && data.status === 'pending';
+            return esAprobada || esTiendaPendiente;
+        });
 
         if (sinPagar.length === 0) {
-            showToast('No tenés compras aprobadas pendientes de pago','info'); return;
+            showToast('No tenés compras pendientes de pago','info'); return;
         }
 
         const select = document.getElementById('purchaseToPaySelect');
         if (!select) return;
         select.innerHTML = '<option value="">Seleccionar compra</option>';
-        sinPagar.forEach(doc => {
-            const d   = doc.data();
-            const fecha = d.approvedAt ? new Date(d.approvedAt).toLocaleDateString('es-AR') : '';
+        
+        const comprasOrdenadas = sinPagar.map(doc => ({ id: doc.id, ...doc.data() }))
+            .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+
+        comprasOrdenadas.forEach(d => {
+            const fecha = d.createdAt ? new Date(d.createdAt).toLocaleDateString('es-AR') : '';
             const opt = document.createElement('option');
-            opt.value = doc.id;
+            opt.value = d.id;
             opt.textContent = `$${(d.total||0).toFixed(2)} – ${d.category||'Compra'} ${fecha}`;
-            opt.dataset.total         = d.total || 0;
+            opt.dataset.total = d.total || 0;
             opt.dataset.comercianteId = d.comercianteId || '';
             select.appendChild(opt);
         });
 
-        AppState.payment = { selectedMethod: null, purchaseId: null };
-        const cpb = document.getElementById('confirmPaymentBtn');
-        if (cpb) cpb.disabled = true;
-        document.getElementById('paymentDetailsSection')?.classList.add('hidden');
-        document.getElementById('purchaseDetails')?.classList.add('hidden');
-        document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('active'));
+        if (window._compraRecienteId) {
+            select.value = window._compraRecienteId;
+            select.dispatchEvent(new Event('change'));
+            window._compraRecienteId = null;
+        } else {
+            AppState.payment = { selectedMethod: null, purchaseId: null };
+            const cpb = document.getElementById('confirmPaymentBtn');
+            if (cpb) cpb.disabled = true;
+            document.getElementById('paymentDetailsSection')?.classList.add('hidden');
+            document.getElementById('purchaseDetails')?.classList.add('hidden');
+            document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('active'));
+        }
 
         const modal = document.getElementById('paymentModal');
         if (modal) modal.style.display = 'flex';
@@ -380,13 +358,8 @@ async function openPaymentModal() {
 }
 
 async function pagarCompraDirecta(purchaseId, total, comercianteId) {
+    window._compraRecienteId = purchaseId;
     await openPaymentModal();
-    setTimeout(() => {
-        const select = document.getElementById('purchaseToPaySelect');
-        if (!select) return;
-        const opt = [...select.options].find(o => o.value === purchaseId);
-        if (opt) { select.value = purchaseId; select.dispatchEvent(new Event('change')); }
-    }, 150);
 }
 
 function loadPurchaseDetails(event) {
@@ -412,11 +385,8 @@ function loadPurchaseDetails(event) {
                 const wallet = d.exists ? (d.data().wallet||{}) : {};
                 window._comercianteAlias = wallet.alias || null;
                 const mpBtn = document.querySelector('#transferenciaDetails .btn-primary');
-                if (mpBtn && window._comercianteAlias) {
-                    mpBtn.style.display = 'block';
-                } else if (mpBtn) {
-                    mpBtn.style.display = 'none';
-                }
+                if (mpBtn && window._comercianteAlias) mpBtn.style.display = 'block';
+                else if (mpBtn) mpBtn.style.display = 'none';
             });
     }
     document.getElementById('purchaseDetails')?.classList.remove('hidden');
@@ -425,13 +395,10 @@ function loadPurchaseDetails(event) {
 
 function selectPaymentMethod(method) {
     AppState.payment.selectedMethod = method;
-    document.querySelectorAll('.payment-option').forEach(o =>
-        o.classList.toggle('active', o.dataset.method === method));
+    document.querySelectorAll('.payment-option').forEach(o => o.classList.toggle('active', o.dataset.method === method));
     document.getElementById('paymentDetailsSection')?.classList.remove('hidden');
     document.getElementById('efectivoDetails')?.classList.toggle('hidden',      method !== 'efectivo');
     document.getElementById('transferenciaDetails')?.classList.toggle('hidden', method !== 'transferencia');
-    const lbl = document.getElementById('paymentMethodLabel');
-    if (lbl) lbl.textContent = method === 'efectivo' ? 'Instrucciones' : 'Datos de la transferencia';
     _checkEnableConfirm();
 }
 
@@ -450,6 +417,14 @@ async function confirmPayment() {
         const opt    = select?.options[select.selectedIndex];
         const amount = parseFloat(opt?.dataset.total || 0);
         const cid    = opt?.dataset.comercianteId || '';
+        
+        if (selectedMethod === 'transferencia') {
+            const comp = document.getElementById('comprobanteNumber')?.value?.trim();
+            const mnt  = parseFloat(document.getElementById('paymentAmount')?.value);
+            if (!comp) throw new Error('Ingresá el número de comprobante');
+            if (!mnt || mnt <= 0) throw new Error('Ingresá un monto válido');
+        }
+
         if (amount <= 0) throw new Error('Monto inválido');
 
         const payData = {
@@ -459,15 +434,13 @@ async function confirmPayment() {
         };
 
         if (selectedMethod === 'transferencia') {
-            const comp = document.getElementById('comprobanteNumber')?.value?.trim();
-            const mnt  = parseFloat(document.getElementById('paymentAmount')?.value);
-            if (!comp) throw new Error('Ingresá el número de comprobante');
-            if (!mnt || mnt <= 0) throw new Error('Ingresá un monto válido');
-            payData.comprobante = comp;
-            payData.amount      = mnt;
+            payData.comprobante = document.getElementById('comprobanteNumber').value.trim();
+            payData.amount      = parseFloat(document.getElementById('paymentAmount').value);
         }
 
         await db.collection(COL.PAYMENTS).add(payData);
+        await db.collection(COL.PURCHASES).doc(purchaseId).update({ status: 'pending_payment_approval' });
+
         closePaymentModal();
         _showPaymentSuccess(amount);
         loadClientPurchases(user.uid);
@@ -504,7 +477,6 @@ async function loadPaymentHistory(userId) {
     try {
         const snap = await db.collection(COL.PAYMENTS).where('userId','==',userId).get();
         const docs = snap.docs.sort((a,b) => (b.data().date||'').localeCompare(a.data().date||'')).slice(0,30);
-
         if (docs.length === 0) { el.innerHTML = '<div class="no-items">Sin historial de pagos</div>'; return; }
         el.innerHTML = docs.map(doc => {
             const p = doc.data();
@@ -535,9 +507,7 @@ async function loadPurchasesToApprove(comercianteId) {
             .where('comercianteId','==', comercianteId)
             .where('status','==','pending').get();
 
-        const docs = snap.docs.sort((a,b) =>
-            (b.data().createdAt||'').localeCompare(a.data().createdAt||''));
-
+        const docs = snap.docs.sort((a,b) => (b.data().createdAt||'').localeCompare(a.data().createdAt||''));
         if (badge) badge.textContent = docs.length;
         if (docs.length === 0) { el.innerHTML = '<div class="no-items">Sin pedidos pendientes</div>'; return; }
 
@@ -554,14 +524,8 @@ async function loadPurchasesToApprove(comercianteId) {
                 <div style="text-align:right">
                     <div class="purchase-total">$${(p.total||0).toFixed(2)}</div>
                     <div style="display:flex;gap:6px;margin-top:8px">
-                        <button class="btn btn-success" style="font-size:12px;padding:6px 12px"
-                            onclick="approvePurchase('${doc.id}','${p.clienteId}',${p.total||0})">
-                            <i class="fas fa-check"></i> Aprobar
-                        </button>
-                        <button class="btn btn-outline" style="font-size:12px;padding:6px 10px"
-                            onclick="rejectPurchase('${doc.id}')">
-                            <i class="fas fa-times"></i>
-                        </button>
+                        <button class="btn btn-success" style="font-size:12px;padding:6px 12px" onclick="approvePurchase('${doc.id}','${p.clienteId}',${p.total||0})"><i class="fas fa-check"></i> Aprobar</button>
+                        <button class="btn btn-outline" style="font-size:12px;padding:6px 10px" onclick="rejectPurchase('${doc.id}')"><i class="fas fa-times"></i></button>
                     </div>
                 </div>
             </div>`;
@@ -574,7 +538,6 @@ async function approvePurchase(purchaseId, clienteId, total) {
     try {
         const fiadoRef = db.collection(COL.USERS).doc(com.uid).collection(COL.FIADOS).doc(clienteId);
         const fiadoDoc = await fiadoRef.get();
-
         if (fiadoDoc.exists) {
             const f = fiadoDoc.data();
             const nuevoUsado = (f.usado||0) + total;
@@ -583,14 +546,9 @@ async function approvePurchase(purchaseId, clienteId, total) {
             }
             await fiadoRef.update({ usado: nuevoUsado, updatedAt: now() });
         }
-
-        await db.collection(COL.PURCHASES).doc(purchaseId).update({
-            status:'approved', approvedAt: now(), approvedBy: com.uid, paid:false, updatedAt: now()
-        });
-
+        await db.collection(COL.PURCHASES).doc(purchaseId).update({ status:'approved', approvedAt: now(), approvedBy: com.uid, paid:false, updatedAt: now() });
         showToast('Compra aprobada ✅','success');
-        if (typeof crearNotificacion === 'function')
-            crearNotificacion(clienteId,'🛍️ Tu compra fue aprobada. ¡Ya podés pagar!','success','fa-check','green');
+        if (typeof crearNotificacion === 'function') crearNotificacion(clienteId,'🛍️ Tu compra fue aprobada. ¡Ya podés pagar!','success','fa-check','green');
         loadPurchasesToApprove(com.uid);
         updateMerchantStats(com.uid);
     } catch (e) { showToast(`Error: ${e.message}`,'error'); }
@@ -600,9 +558,7 @@ async function rejectPurchase(purchaseId) {
     if (!confirm('¿Rechazar esta compra?')) return;
     const com = requireAuth();
     try {
-        await db.collection(COL.PURCHASES).doc(purchaseId).update({
-            status:'rejected', rejectedAt: now(), rejectedBy: com.uid
-        });
+        await db.collection(COL.PURCHASES).doc(purchaseId).update({ status:'rejected', rejectedAt: now(), rejectedBy: com.uid });
         showToast('Compra rechazada','info');
         loadPurchasesToApprove(com.uid);
         updateMerchantStats(com.uid);
@@ -613,15 +569,8 @@ async function loadApprovedPurchasesMerchant(comercianteId) {
     const el = document.getElementById('approvedPurchasesMerchantList');
     if (!el) return;
     try {
-        const snap = await db.collection(COL.PURCHASES)
-            .where('comercianteId','==', comercianteId)
-            .where('status','==','approved').get();
-
-        const docs = snap.docs
-            .sort((a,b) => (b.data().approvedAt||b.data().createdAt||'')
-                          .localeCompare(a.data().approvedAt||a.data().createdAt||''))
-            .slice(0,50);
-
+        const snap = await db.collection(COL.PURCHASES).where('comercianteId','==', comercianteId).where('status','==','approved').get();
+        const docs = snap.docs.sort((a,b) => (b.data().approvedAt||b.data().createdAt||'').localeCompare(a.data().approvedAt||a.data().createdAt||'')).slice(0,50);
         if (docs.length === 0) { el.innerHTML = '<div class="no-items">Sin compras aprobadas</div>'; return; }
         el.innerHTML = docs.map(doc => {
             const p = doc.data();
@@ -650,14 +599,8 @@ async function loadPaymentsToApprove(comercianteId) {
     const badge = document.getElementById('pendingPaymentsBadge');
     if (!el) return;
     try {
-        const snap = await db.collection(COL.PAYMENTS)
-            .where('comercianteId','==', comercianteId)
-            .where('approved','==', false)
-            .where('rejected','==', false).get();
-
-        const docs = snap.docs.sort((a,b) =>
-            (b.data().date||'').localeCompare(a.data().date||''));
-
+        const snap = await db.collection(COL.PAYMENTS).where('comercianteId','==', comercianteId).where('approved','==', false).where('rejected','==', false).get();
+        const docs = snap.docs.sort((a,b) => (b.data().date||'').localeCompare(a.data().date||''));
         if (badge) badge.textContent = docs.length;
         if (docs.length === 0) { el.innerHTML = '<div class="no-items">Sin pagos pendientes</div>'; return; }
 
@@ -672,14 +615,8 @@ async function loadPaymentsToApprove(comercianteId) {
                     <p style="font-size:12px;color:var(--text-light)">${new Date(p.date).toLocaleDateString('es-AR')}</p>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:6px">
-                    <button class="btn btn-success" style="font-size:12px;padding:6px 12px"
-                        onclick="approvePayment('${doc.id}','${p.userId}',${p.amount||0})">
-                        <i class="fas fa-check"></i> Aprobar
-                    </button>
-                    <button class="btn btn-outline" style="font-size:12px;padding:6px 10px"
-                        onclick="rejectPayment('${doc.id}')">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <button class="btn btn-success" style="font-size:12px;padding:6px 12px" onclick="approvePayment('${doc.id}','${p.userId}',${p.amount||0})"><i class="fas fa-check"></i> Aprobar</button>
+                    <button class="btn btn-outline" style="font-size:12px;padding:6px 10px" onclick="rejectPayment('${doc.id}')"><i class="fas fa-times"></i></button>
                 </div>
             </div>`;
         }).join('');
@@ -691,22 +628,14 @@ async function approvePayment(paymentId, userId, amount) {
     try {
         const payDoc = await db.collection(COL.PAYMENTS).doc(paymentId).get();
         const pd     = payDoc.data();
-
-        await db.collection(COL.PAYMENTS).doc(paymentId).update({
-            approved: true, approvedBy: com.uid, approvedAt: now()
-        });
-
+        await db.collection(COL.PAYMENTS).doc(paymentId).update({ approved: true, approvedBy: com.uid, approvedAt: now() });
         if (pd?.purchaseId) {
             await db.collection(COL.PURCHASES).doc(pd.purchaseId).update({ paid: true, paidAt: now() });
         }
-
         if (typeof registrarCargo5pct === 'function') registrarCargo5pct(com.uid, amount);
         if (typeof sumarScoringPorPago === 'function') sumarScoringPorPago(userId, amount, 'cliente');
         if (typeof sumarVentasComerciante === 'function') sumarVentasComerciante(com.uid, amount);
-
-        if (typeof crearNotificacion === 'function')
-            crearNotificacion(userId,'✅ Tu pago fue aprobado. ¡Sumaste puntos!','success','fa-check-circle','green');
-
+        if (typeof crearNotificacion === 'function') crearNotificacion(userId,'✅ Tu pago fue aprobado. ¡Sumaste puntos!','success','fa-check-circle','green');
         showToast('Pago aprobado ✅','success');
         loadPaymentsToApprove(com.uid);
         updateMerchantStats(com.uid);
@@ -718,9 +647,7 @@ async function rejectPayment(paymentId) {
     if (!razon) return;
     const com = requireAuth();
     try {
-        await db.collection(COL.PAYMENTS).doc(paymentId).update({
-            rejected: true, rejectedBy: com.uid, rejectedAt: now(), rejectionReason: razon
-        });
+        await db.collection(COL.PAYMENTS).doc(paymentId).update({ rejected: true, rejectedBy: com.uid, rejectedAt: now(), rejectionReason: razon });
         showToast('Pago rechazado','info');
         loadPaymentsToApprove(com.uid);
     } catch (e) { showToast(`Error: ${e.message}`,'error'); }
@@ -739,9 +666,9 @@ async function updateMerchantStats(comercianteId) {
         ]);
         let totalVentas = 0;
         aSnap.forEach(d => { totalVentas += d.data().total || 0; });
-        _setEl('pendingCount',    pSnap.size);
-        _setEl('approvedCount',   aSnap.size);
-        _setEl('totalSales',      `$${totalVentas.toFixed(0)}`);
+        _setEl('pendingCount', pSnap.size);
+        _setEl('approvedCount', aSnap.size);
+        _setEl('totalSales', `$${totalVentas.toFixed(0)}`);
         _setEl('pendingPayments', pySnap.size);
     } catch (e) { console.error('updateMerchantStats:', e); }
 }
@@ -756,17 +683,14 @@ async function loadClientesFiado(comercianteId) {
     try {
         const snap = await db.collection(COL.USERS).doc(comercianteId).collection(COL.FIADOS).get();
         if (snap.empty) { el.innerHTML = '<div class="no-items">Sin clientes con crédito</div>'; return; }
-
         const ids    = snap.docs.map(d => d.id);
         const chunks = [];
         for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i+10));
         const emailMap = {};
         for (const chunk of chunks) {
-            const us = await db.collection(COL.USERS)
-                .where(firebase.firestore.FieldPath.documentId(), 'in', chunk).get();
+            const us = await db.collection(COL.USERS).where(firebase.firestore.FieldPath.documentId(), 'in', chunk).get();
             us.forEach(d => { emailMap[d.id] = d.data().email||'Cliente'; });
         }
-
         el.innerHTML = snap.docs.map(doc => {
             const f    = doc.data();
             const disp = (f.monto_fiado||0) - (f.usado||0);
@@ -780,10 +704,7 @@ async function loadClientesFiado(comercianteId) {
                         <span style="color:var(--success)">Disp: <strong>$${disp.toFixed(2)}</strong></span>
                     </div>
                 </div>
-                <button class="btn btn-outline" style="font-size:11px;padding:6px 10px"
-                    onclick="enviarDineroACliente('${doc.id}', ${disp})" title="Enviar dinero a su MP">
-                    <i class="fas fa-hand-holding-usd"></i>
-                </button>
+                <button class="btn btn-outline" style="font-size:11px;padding:6px 10px" onclick="enviarDineroACliente('${doc.id}', ${disp})" title="Enviar dinero a su MP"><i class="fas fa-hand-holding-usd"></i></button>
             </div>`;
         }).join('');
     } catch (e) { console.error('loadClientesFiado:', e); }
@@ -827,16 +748,12 @@ async function habilitarFiado() {
 }
 
 // ============================================
-// NUEVO: CLIENTE — GUARDAR ALIAS DE MP DESDE SU PERFIL
+// NUEVO: CLIENTE — GUARDAR ALIAS DE MP
 // ============================================
-// Requiere en el HTML del cliente algo como:
-//   <input id="aliasMPInput" class="form-control" placeholder="tu.alias.mp">
-//   <button onclick="guardarAliasMPDesdeInput()">Guardar</button>
-// (guardarAliasMP() en sí vive en features.js)
 
 function guardarAliasMPDesdeInput() {
     const val = document.getElementById('aliasMPInput')?.value;
-    guardarAliasMP(val);
+    if (typeof guardarAliasMP === 'function') guardarAliasMP(val);
 }
 
 function closeApprovePaymentModal() {
@@ -947,4 +864,5 @@ function _renderScoring(d) {
 }
 
 window._renderScoring = _renderScoring;
-console.log('✅ app.js V5 cargado (duplicado de _renderPurchaseList eliminado)');
+
+console.log('✅ app.js V5 cargado correctamente');

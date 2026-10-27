@@ -41,8 +41,11 @@ window.requireAuth = () => {
 
 window.now = () => new Date().toISOString();
 
-// Persistencia offline (PWA)
+// ⚠️ PERSISTENCIA OFFLINE DESACTIVADA
+// Esto causaba el bloqueo de IndexedDB y el spinner infinito en la tienda.
+/*
 db.enablePersistence({ synchronizeTabs: true })
   .catch(e => console.warn('Persistencia:', e.code));
+*/
 
-console.log('✅ firebase.js cargado');
+console.log('✅ firebase.js cargado (Persistencia desactivada)');

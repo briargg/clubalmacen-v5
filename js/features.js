@@ -439,10 +439,12 @@ async function registrarCargo5pct(comercianteId, montoPago) {
 // scoring al comerciante (sumarScoringComerciante, en scoring.js) — así es
 // como el comerciante ve subir su propio scoring cuando paga su
 // facturación.
-// HTML sugerido: <div id="cargosMantenimientoAdminList"></div>
+// HTML sugerido: tu app.html YA tiene el contenedor real — id="adminCobrosContainer"
+// (antes esta función apuntaba a un id inventado, "cargosMantenimientoAdminList",
+// que no existe en tu HTML, así que nunca se veía nada ahí).
 
 async function loadCargosMantenimientoAdmin() {
-    const container = document.getElementById('cargosMantenimientoAdminList');
+    const container = document.getElementById('adminCobrosContainer');
     if (!container) return;
     if (firebase.auth().currentUser?.email !== 'admin@clubalmacen.com') {
         container.innerHTML = '<div class="no-items">🔒 Solo el admin puede ver esto</div>';

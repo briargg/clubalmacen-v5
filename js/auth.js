@@ -530,3 +530,37 @@ window.editarElectro = editarElectro;
 
 console.log('✅ auth.js cargado (con panel de Admin simplificado)');
 console.log('✅ auth.js cargado (con panel de Admin simplificado)');
+
+// ============================================
+// REGISTRO CON GOOGLE (Faltaba en auth.js)
+// ============================================
+window.registrarConGoogle = function() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    
+    auth.signInWithPopup(provider).then(async (result) => {
+        const user = result.user;
+        const doc = await db.collection(COL.USERS).doc(user.uid).get();
+        
+        if (!doc.exists) {
+            await db.collection(COL.USERS).doc(user.uid).set({
+                email: user.email, 
+                role: null, // Se le asignará después con el modal
+                nombreDisplay: user.displayName || user.email,
+                createdAt: now(), 
+                updatedAt: now()
+            });
+            await db.collection(COL.USERS).doc(user.uid).collection(COL.SCORING).doc('data').set({
+                score: 300, category: 'low', totalPayments: 0, onTimePayments: 0,
+                latePayments: 0, creditUsed: 0, creditLimit: 0,
+                ventasAcumuladas: 0, createdAt: now(), updatedAt: now()
+            });
+        }
+        
+        // Una vez logueado, loadUserAndShow se encarga de mostrar el modal de rol si es nuevo
+        await loadUserAndShow(user);
+        
+    }).catch(e => {
+        if (typeof showStatus === 'function') showStatus(`Error: ${e.message}`, 'error');
+        else showToast(`Error: ${e.message}`, 'error');
+    });
+};

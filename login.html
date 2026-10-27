@@ -15,24 +15,279 @@
     <link rel="stylesheet" href="css/styles.css"/>
     <link rel="stylesheet" href="css/store.css"/>
     <style>
-        /* Auth centrado */
-        #authPage {
+        /* ============================================
+           ESTILOS DEL NUEVO LOGIN (Mobile First)
+           ============================================ */
+               #authPage {
             display: none;
             min-height: 100vh;
+            background: #f5f7fa; /* Fondo gris para la compu */
+            padding: 0;
+            margin: 0;
             justify-content: center;
-            align-items: center;
-            background: var(--background);
-            padding: 20px;
+            align-items: center; /* Centra la app en la compu */
+            overflow: hidden;
+            position: relative;
         }
-        .auth-inner  { width: 100%; max-width: 420px; }
-        .auth-logo   { text-align: center; margin-bottom: 28px; }
-        .auth-logo img { height: 64px; }
-        .auth-logo h1  { font-size: 28px; font-weight: 800; color: var(--primary); margin: 10px 0 4px; }
-        .auth-logo p   { font-size: 14px; color: var(--text-light); margin: 0; }
-        .auth-card { background: white; border-radius: 24px; padding: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); }
 
-        /* Modo body */
-        body.auth-mode  #authPage      { display: flex  !important; }
+        body.auth-mode #authPage {
+            display: flex !important;
+        }
+
+        /* 🔥 ESTO OCULTA EL LOGO GIGANTE DEL HEADER EN EL LOGIN 🔥 */
+        body.auth-mode #appHeader, 
+        body.auth-mode #mainDashboard, 
+        body.auth-mode .chat-fab, 
+        body.auth-mode .carrito-fab { 
+            display: none !important; 
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 480px;
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            box-shadow: 0 0 40px rgba(0,0,0,0.1); /* Sombra para que resalte en la compu */
+        }
+
+        /* Si es compu, le damos bordes redondeados y un alto máximo */
+        @media (min-width: 481px) {
+            .login-container {
+                border-radius: 30px;
+                height: 90vh;
+                min-height: auto;
+         overflow: hidden;       
+            }
+        }
+
+        /* Fondo rojo con curva */
+        .login-bg-curve {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 64vh;
+            background: var(--gradient-primary);
+            border-bottom-left-radius: 50% 15%;
+            border-bottom-right-radius: 50% 15%;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-top: 40px;
+            box-shadow: 0 10px 30px rgba(224, 0, 0, 0.3);
+            overflow: hidden; 
+        }
+
+        /* Patrón de iconos de fondo sutil */
+        .login-bg-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.08;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><text x="10" y="40" font-family="Arial" font-size="30" fill="white">🛒</text><text x="70" y="90" font-family="Arial" font-size="24" fill="white">🏪</text><text x="20" y="110" font-family="Arial" font-size="20" fill="white">🛍️</text></svg>');
+            background-size: 180px;
+            pointer-events: none;
+        }
+
+       .login-logo {
+    width: 220px; /* <--- Cambiá este número para agrandarlo */
+    height: auto;
+    margin-bottom: 20px;
+    z-index: 2;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+    mix-blend-mode: screen;
+}
+
+        /* Textos */
+        .login-title {
+            color: white;
+            font-size: 34px;
+            font-weight: 800;
+            margin: 0;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            letter-spacing: -0.5px;
+        }
+
+        .login-subtitle {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 17px;
+            margin-top: 6px;
+            z-index: 2;
+            font-weight: 500;
+        }
+
+        .login-description {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+            max-width: 80%;
+            z-index: 2;
+            line-height: 1.4;
+        }
+
+        /* Formulario (debajo de la curva) */
+        .login-form-container {
+            position: relative;
+            z-index: 2;
+            margin-top: 68vh;
+            padding: 25px 30px 40px;
+            background: white;
+            border-radius: 30px 30px 0 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Inputs con iconos */
+        .input-group-custom {
+            position: relative;
+            margin-bottom: 18px;
+        }
+
+        .input-group-custom > i:first-child {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            font-size: 18px;
+            z-index: 3;
+        }
+
+        .input-group-custom .form-control {
+            padding: 16px 50px 16px 50px;
+            border: none;
+            background: #f0f2f5;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-dark);
+            transition: all 0.3s;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            width: 100%;
+        }
+
+        .input-group-custom .form-control:focus {
+            background: #e6e9f0;
+            box-shadow: 0 0 0 3px rgba(224, 0, 0, 0.1);
+            outline: none;
+        }
+
+        .input-group-custom .form-control::placeholder {
+            color: #999;
+            font-weight: 400;
+        }
+
+        /* Ojo para contraseña */
+        .toggle-password {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            cursor: pointer;
+            font-size: 18px;
+            z-index: 3;
+            transition: color 0.2s;
+        }
+        .toggle-password:hover { color: var(--primary); }
+
+        /* Botón principal */
+        .btn-login {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(224, 0, 0, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(224, 0, 0, 0.4);
+        }
+
+        .btn-login:active {
+            transform: scale(0.98);
+        }
+
+        /* Separador */
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: #aaa;
+            font-size: 13px;
+            margin: 20px 0;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #eee;
+        }
+        .divider::before { margin-right: 10px; }
+        .divider::after { margin-left: 10px; }
+
+        /* Botón Google */
+        .btn-google {
+            background: white;
+            color: #333;
+            border: 2px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px;
+            border-radius: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            font-size: 15px;
+        }
+        .btn-google:hover { border-color: var(--primary); background: #fafafa; }
+        .btn-google img { width: 22px; }
+
+        /* Link de registro */
+        .signup-link {
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-light);
+            margin-top: 20px;
+        }
+        .signup-link a {
+            color: var(--primary);
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .signup-link a:hover { text-decoration: underline; }
+
+        /* Ajustes para pantallas pequeñas */
+        @media (max-width: 480px) {
+            .login-bg-curve { height: 50vh; }
+            .login-form-container { margin-top: 50vh; padding: 20px 22px 30px; }
+            .login-title { font-size: 30px; }
+            .login-logo { width: 220px; }
+        }
+
+        /* ============================================
+           ESTILOS GENERALES DE LA APP (heredados)
+           ============================================ */
         body.auth-mode  #appHeader     { display: none  !important; }
         body.auth-mode  #mainDashboard { display: none  !important; }
         body.auth-mode  .chat-fab      { display: none  !important; }
@@ -41,41 +296,68 @@
         body.app-mode   #appHeader     { display: flex  !important; }
         body.app-mode   #mainDashboard { display: block !important; }
         
-        /* Admin Dashboard */
         #adminDashboard { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; }
         #adminDashboard.visible { display: block; }
         .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 768px) { .admin-grid { grid-template-columns: 1fr; } }
+
+        /* Corrección visual del encabezado de la tienda */
+        .tienda-header { border-radius: 16px; padding: 20px; color: white; position: relative; overflow: hidden; margin-bottom: 20px; }
+        .tienda-nombre-bloque h3, .tienda-nombre-bloque p { color: white !important; margin: 0; }
+        .tienda-nombre-bloque h3 { font-size: 20px; font-weight: 800; }
+        .tienda-nombre-bloque p { font-size: 13px; opacity: 0.9; }
+        .tienda-logo { background: white; padding: 2px; border-radius: 12px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .tienda-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
     </style>
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-firestore.js"></script>
 </head>
 <body class="auth-mode">
 
-<!-- AUTH -->
+<!-- ============================================
+     AUTH PAGE (NUEVO DISEÑO)
+     ============================================ -->
 <div id="authPage">
-    <div class="auth-inner">
-        <div class="auth-logo">
-            <img src="logo_club_almacen_rojo.png" alt="ClubAlmacén">
-            <h1>ClubAlmacén</h1>
-            <p>El fiado del barrio, ahora digital</p>
+    <div class="login-container">
+        <!-- Fondo rojo con curva -->
+        <div class="login-bg-curve">
+            <div class="login-bg-pattern"></div>
+            <!-- Logo blanco sin fondo -->
+            <img src="logo_club_almacen_blanco_sin_fondo.png" 
+                 alt="ClubAlmacén" 
+                 class="login-logo" 
+                 onerror="this.src='logo_club_almacen_rojo.png'">
+            <h1 class="login-title">¡Hola!</h1>
+            <p class="login-subtitle">Bienvenido a Club Almacén</p>
+            <p class="login-description">Tu barrio, tus comercios, tus beneficios.</p>
         </div>
-        <div class="auth-card">
-            <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" id="email" class="form-control" placeholder="tu@email.com" autocomplete="email"/>
+
+        <!-- Formulario -->
+        <div class="login-form-container">
+            <div class="input-group-custom">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="email" class="form-control" placeholder="Correo electrónico" autocomplete="email"/>
             </div>
-            <div class="form-group">
-                <label class="form-label">Contraseña</label>
-                <input type="password" id="password" class="form-control" placeholder="••••••••" autocomplete="current-password"/>
+            <div class="input-group-custom">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="password" class="form-control" placeholder="Contraseña" autocomplete="current-password"/>
+                <i class="fas fa-eye toggle-password" onclick="togglePasswordVisibility()"></i>
             </div>
-            <button class="btn btn-primary" id="loginButton" style="width:100%;padding:14px;font-size:15px;margin-bottom:12px">
-                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+
+            <button class="btn-login" id="loginButton">
+                Iniciar sesión
             </button>
-            <p class="text-center" style="font-size:14px;color:var(--text-light)">
-                ¿No tenés cuenta? <a href="#" id="toggleSignupLink" style="color:var(--primary);font-weight:600">Registrate</a>
+
+            <div class="divider">o</div>
+
+            <button class="btn-google" onclick="registrarConGoogle()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Continuar con Google
+            </button>
+
+            <p class="signup-link">
+                ¿No tenés cuenta? <a href="#" id="toggleSignupLink">Registrate</a>
             </p>
             <div id="signupSection" class="hidden" style="margin-top:10px">
                 <button class="btn btn-secondary" id="signupButton" style="width:100%;padding:13px">
@@ -146,7 +428,6 @@
         <button class="dash-tab" onclick="switchTab('cliente','electro')"><i class="fas fa-tv"></i> Electrodomésticos</button>
     </div>
 
-    <!-- INICIO -->
     <div class="tab-panel active" id="tab-cliente-inicio">
         <div class="dashboard-grid">
             <div class="card">
@@ -194,7 +475,6 @@
         </div>
     </div>
 
-    <!-- TIENDAS -->
     <div class="tab-panel" id="tab-cliente-tiendas">
         <div id="tiendasListaView">
             <div class="card" style="margin-bottom:16px">
@@ -211,10 +491,19 @@
                 </div>
             </div>
         </div>
-        <div id="tiendaPanel" style="display:none"></div>
+                <div id="tiendaPanel" style="display:none"></div>
+        <!-- CARRITO FLOTANTE -->
+        <div id="carritoFlotante" style="display:none; position:fixed; bottom:20px; left:20px; right:20px; background:white; padding:16px; border-radius:16px; box-shadow:0 -4px 20px rgba(0,0,0,0.15); z-index:1000; align-items:center; justify-content:space-between;">
+            <div>
+                <div style="font-size:12px;color:var(--text-light)">Total del carrito</div>
+                <div style="font-size:20px;font-weight:800;color:var(--primary)" id="carritoTotalFlotante">$0.00</div>
+            </div>
+            <button class="btn btn-primary" onclick="abrirModalPagoCarrito()" style="padding:12px 24px;border-radius:12px;font-weight:700">
+                Finalizar Compra
+            </button>
+        </div>
     </div>
 
-    <!-- VAQUITAS -->
     <div class="tab-panel" id="tab-cliente-vaquitas">
         <div class="card" style="margin-bottom:16px">
             <div class="card-header">
@@ -240,7 +529,6 @@
         </div>
     </div>
 
-    <!-- COMPRAS -->
     <div class="tab-panel" id="tab-cliente-compras">
         <div class="card">
             <div class="card-header"><h2 class="card-title"><i class="fas fa-shopping-cart"></i> Nueva Compra</h2></div>
@@ -301,7 +589,6 @@
         </div>
     </div>
 
-    <!-- PAGOS -->
     <div class="tab-panel" id="tab-cliente-pagos">
         <div class="card">
             <div class="card-header"><h2 class="card-title"><i class="fas fa-money-check-alt"></i> Pagar</h2></div>
@@ -316,7 +603,6 @@
         </div>
     </div>
 
-    <!-- CUPONES -->
     <div class="tab-panel" id="tab-cliente-cupones">
         <div class="card" style="margin-bottom:16px">
             <div class="card-header">
@@ -332,15 +618,16 @@
         </div>
     </div>
 
-    <!-- CRÉDITO -->
     <div class="tab-panel" id="tab-cliente-credito">
         <div class="card">
             <div class="card-header"><h2 class="card-title"><i class="fas fa-hand-holding-usd"></i> Mis Líneas de Crédito</h2></div>
             <div class="purchase-list" id="misFiados"><div class="no-items">Cargando...</div></div>
+            <button class="btn btn-outline" onclick="solicitarCreditoDirecto()" style="width:100%;margin-top:14px">
+                <i class="fas fa-plus-circle"></i> Solicitar crédito para algo puntual
+            </button>
         </div>
     </div>
 
-    <!-- PERFIL -->
     <div class="tab-panel" id="tab-cliente-perfil">
         <div class="card">
             <div class="card-header"><h2 class="card-title"><i class="fas fa-user"></i> Mi Perfil</h2></div>
@@ -352,7 +639,6 @@
         </div>
     </div>
 
-    <!-- ELECTRODOMÉSTICOS -->
     <div class="tab-panel" id="tab-cliente-electro">
         <div class="card">
             <div class="card-header">
@@ -480,29 +766,28 @@
                 <h2 class="card-title"><i class="fas fa-receipt"></i> Suscripción</h2>
                 <span class="card-badge">5% mensual</span>
             </div>
-            
             <div id="suscripcionPanel">
                 <div class="no-items"><i class="fas fa-spinner fa-spin"></i> Calculando...</div>
             </div>
-            
         </div>
         <div class="card" style="margin-top:20px">
             <div class="card-header"><h2 class="card-title"><i class="fas fa-list-alt"></i> Historial de Cargos</h2></div>
             <div id="historialCargos">
                 <div class="no-items">Cargando...</div>
             </div>
+            <button class="btn btn-outline" onclick="solicitarCreditoDirecto()" style="width:100%;margin-top:14px">
+                <i class="fas fa-plus-circle"></i> Solicitar crédito para algo puntual
+            </button>
         </div>
     </div>
 
     <div class="tab-panel" id="tab-comerciante-perfil-user">
         <div class="card">
             <div class="card-header"><h2 class="card-title"><i class="fas fa-user"></i> Mi Perfil Personal</h2></div>
-            <!-- ID ÚNICO PARA EL PERFIL DEL COMERCIANTE -->
             <div id="perfilUsuarioContainerCom"><div class="no-items">Cargando...</div></div>
         </div>
         <div class="card">
             <div class="card-header"><h2 class="card-title"><i class="fas fa-wallet"></i> Mi Wallet</h2></div>
-            <!-- ID ÚNICO PARA LA WALLET DEL COMERCIANTE -->
             <div id="walletEditorContainerCom"><div class="no-items">Cargando...</div></div>
         </div>
     </div>
@@ -527,7 +812,6 @@
             <span class="card-badge">Club Almacén</span>
         </div>
         
-        <!-- ESTADÍSTICAS GENERALES -->
         <div id="adminStatsContainer" class="card" style="box-shadow:none;border:1px solid var(--border);margin-bottom:16px">
             <div class="card-header"><h2 class="card-title" style="font-size:16px"><i class="fas fa-chart-pie"></i> Estadísticas Generales</h2></div>
             <div class="no-items"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>
@@ -544,7 +828,6 @@
             </div>
         </div>
         
-        <!-- NUEVO: COBROS A COMERCIANTES -->
         <div class="card" style="box-shadow:none;border:1px solid var(--border);margin-top:16px">
             <div class="card-header">
                 <h2 class="card-title" style="font-size:16px"><i class="fas fa-hand-holding-usd"></i> Cobros a Comerciantes (5%)</h2>
@@ -637,11 +920,9 @@
     </div>
 </div>
 
-<!-- Vaquita detalle/crear/aportar -->
 <div id="vaquitaDetalleOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;justify-content:center;align-items:center;z-index:1500;backdrop-filter:blur(5px);padding:20px"
      onclick="if(event.target===this)this.style.display='none'"></div>
 
-<!-- Carrito -->
 <div class="carrito-overlay" id="carritoOverlay" onclick="cerrarCarrito()"></div>
 <div class="carrito-panel"   id="carritoPanel"></div>
 <button class="carrito-fab"  id="carritoFab" onclick="abrirCarrito()">
@@ -649,11 +930,9 @@
     <span class="carrito-count" id="carritoCount">0</span>
 </button>
 
-<!-- Modal producto -->
 <div id="productoModalOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;justify-content:center;align-items:flex-end;z-index:1050;backdrop-filter:blur(3px)"
      onclick="if(event.target===this)cerrarProductoModal()"></div>
 
-<!-- Chat IA -->
 <button class="chat-fab" onclick="toggleChat()">🤖<span class="fab-dot"></span></button>
 <div class="chat-window" id="chatWindow">
     <div class="chat-header">
@@ -680,9 +959,8 @@
     </div>
 </div>
 
-<!-- PWA Banner -->
 <div class="pwa-banner" id="pwaBanner">
-    <img src="logo_club_almacen_rojo.png" class="pwa-banner-logo" alt="Club Almacén">
+    
     <div class="pwa-banner-text">
         <h4>Instalá ClubAlmacén</h4>
         <p>Accedé más rápido desde tu pantalla de inicio</p>
@@ -693,19 +971,40 @@
     </div>
 </div>
 
-<!-- Scripts — orden crítico -->
+<!-- Scripts -->
 <script src="js/firebase.js"></script>
+<script src="js/store.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
 <script src="js/features.js"></script>
-<script src="js/store.js"></script>
 <script src="js/vaquitas.js"></script>
 <script src="js/wallet.js"></script>
 <script src="js/directorio.js"></script>
+<script src="js/admin-analytics.js"></script>
 <script src="js/scoring.js"></script>
+<script src="js/tienda-avanzada.js"></script>
 
 <script>
-// TAB SWITCHER
+// ============================================
+// TOGGLE PASSWORD VISIBILITY
+// ============================================
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.querySelector('.toggle-password');
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    }
+}
+
+// ============================================
+// SWITCH TAB (con correcciones)
+// ============================================
 function switchTab(role, tabName) {
     const prefix = `tab-${role}-`;
     document.querySelectorAll(`[id^="${prefix}"]`).forEach(p => p.classList.remove('active'));
@@ -719,7 +1018,14 @@ function switchTab(role, tabName) {
     if (!uid) return;
 
     const actions = {
-        'cliente-tiendas':          () => { if(typeof initStoreCliente==='function') initStoreCliente(); if(typeof initDirectorio==='function') initDirectorio(); },
+        'cliente-tiendas': () => { 
+            if (typeof loadTiendasParaCliente === 'function') {
+                loadTiendasParaCliente();
+            }
+            if (typeof initDirectorio === 'function') {
+                initDirectorio();
+            }
+        },
         'cliente-vaquitas':         () => { if(typeof initVaquitas==='function') initVaquitas(); },
         'cliente-cupones':          () => { const s=parseInt(document.getElementById('scoreValue')?.textContent)||300; if(typeof loadCupones==='function') loadCupones(s); },
         'cliente-perfil':           () => { if(typeof renderPerfilUsuario==='function') renderPerfilUsuario(uid, {email:firebase.auth().currentUser?.email}); if(typeof renderWalletEditor==='function') renderWalletEditor(uid); },
@@ -729,7 +1035,7 @@ function switchTab(role, tabName) {
         'comerciante-aprobaciones': () => { loadPurchasesToApprove(uid); loadPaymentsToApprove(uid); },
         'comerciante-historial':    () => loadApprovedPurchasesMerchant(uid),
         'comerciante-clientes':     () => { loadClientesFiado(uid); cargarClientes(); if(typeof renderBuscadorClientes==='function') renderBuscadorClientes(); },
-        'comerciante-suscripcion':  () => { if(typeof loadSuscripcionPanel==='function') loadSuscripcionPanel(uid); },
+        'comerciante-suscripcion':  () => { setTimeout(() => { if(typeof loadSuscripcionPanel==='function') loadSuscripcionPanel(uid); }, 300); },
         'comerciante-perfil-user':  () => { if(typeof renderPerfilUsuario==='function') renderPerfilUsuario(uid, {email:firebase.auth().currentUser?.email}); if(typeof renderWalletEditor==='function') renderWalletEditor(uid); },
         'comerciante-electro':      () => { if(typeof loadCatalogoElectro==='function') loadCatalogoElectro(false, 'catalogoElectroContainerCom'); },
     };
@@ -768,10 +1074,306 @@ document.getElementById('pwaDismissBtn')?.addEventListener('click', () => {
     localStorage.setItem('pwa_dismissed','1');
 });
 
+// Deep link para producto compartido
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.payment-option').forEach(o => {
         o.addEventListener('click', () => selectPaymentMethod(o.dataset.method));
     });
+    if (typeof checkProductoDeepLink === 'function') checkProductoDeepLink();
+});
+</script>
+
+<script src="js/tienda-avanzada.js"></script>
+
+<!-- PARCHE DE EMERGENCIA PARA COMERCIANTES -->
+<script>
+window.addEventListener('load', () => {
+    // 1. Forzar que "Mi Negocio" cargue siempre
+    window.loadPerfilComerciante = async function(uid) {
+        const container = document.getElementById('perfilEditorContainer');
+        if (!container) return;
+        
+        container.innerHTML = '<div class="no-items"><i class="fas fa-spinner fa-spin"></i> Cargando datos...</div>';
+        
+        try {
+            const doc = await db.collection(COL.PERFILES_COMERCIOS).doc(uid).get();
+            const data = doc.exists ? doc.data() : {};
+            
+            container.innerHTML = `
+            <div class="form-group">
+                <label class="form-label">Nombre del negocio</label>
+                <input type="text" id="comNombre" class="form-control" value="${data.nombre || ''}" placeholder="Ej: Almacén Don Pedro">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tipo de comercio</label>
+                <select id="comTipo" class="form-control">
+                    <option value="Almacén" ${data.tipo === 'Almacén' ? 'selected' : ''}>Almacén</option>
+                    <option value="Verdulería" ${data.tipo === 'Verdulería' ? 'selected' : ''}>Verdulería</option>
+                    <option value="Carnicería" ${data.tipo === 'Carnicería' ? 'selected' : ''}>Carnicería</option>
+                    <option value="Farmacia" ${data.tipo === 'Farmacia' ? 'selected' : ''}>Farmacia</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Dirección (para que te encuentren)</label>
+                <input type="text" id="comDireccion" class="form-control" value="${data.direccion || ''}" placeholder="Calle Falsa 123">
+            </div>
+            <div class="form-group">
+                <label class="form-label">¿Hacemos envíos?</label>
+                <select id="comEnvio" class="form-control">
+                    <option value="false" ${!data.envio ? 'selected' : ''}>Solo retiro en local</option>
+                    <option value="true" ${data.envio ? 'selected' : ''}>Sí, con envío</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Descripción breve</label>
+                <textarea id="comDesc" class="form-control" rows="3">${data.descripcion || ''}</textarea>
+            </div>
+            <button class="btn btn-primary" onclick="guardarPerfilComercio('${uid}')" style="width:100%;padding:14px">
+                <i class="fas fa-save"></i> Guardar y ser visible
+            </button>`;
+        } catch(e) {
+            container.innerHTML = `<div class="no-items">Error al cargar: ${e.message}</div>`;
+        }
+    };
+
+    window.guardarPerfilComercio = async function(uid) {
+        const btn = event.target;
+        btn.disabled = true; 
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        try {
+            await db.collection(COL.PERFILES_COMERCIOS).doc(uid).set({
+                nombre: document.getElementById('comNombre').value.trim(),
+                tipo: document.getElementById('comTipo').value,
+                direccion: document.getElementById('comDireccion').value.trim(),
+                envio: document.getElementById('comEnvio').value === 'true',
+                descripcion: document.getElementById('comDesc').value.trim(),
+                activo: true,
+                updatedAt: now()
+            }, { merge: true });
+            showToast('✅ Perfil guardado.', 'success');
+            btn.disabled = false; 
+            btn.innerHTML = '<i class="fas fa-save"></i> Guardar y ser visible';
+        } catch(e) {
+            showToast(`Error: ${e.message}`, 'error');
+            btn.disabled = false;
+        }
+    };
+
+    // 2. Forzar que "Suscripción" cargue siempre
+    window.loadSuscripcionPanel = async function(uid) {
+        const panel = document.getElementById('suscripcionPanel');
+        const historial = document.getElementById('historialCargos');
+        if (!panel) return;
+
+        try {
+            const ventas = await db.collection(COL.PURCHASES)
+                .where('comercianteId', '==', uid)
+                .where('status', '==', 'approved')
+                .get();
+                
+            let totalVentas = 0;
+            ventas.forEach(d => totalVentas += d.data().total || 0);
+            const deuda = totalVentas * 0.05;
+
+            panel.innerHTML = `
+                <div style="text-align:center; margin-bottom:20px;">
+                    <div style="font-size:36px;font-weight:800;color:var(--primary)">$${deuda.toFixed(2)}</div>
+                    <p style="color:var(--text-light)">Cargo de mantenimiento (5%) sobre tus ventas</p>
+                </div>
+                ${deuda > 0 ? `
+                    <button class="btn btn-primary" onclick="pagarSuscripcionMP(${deuda})" style="width:100%;background:#00a650;padding:14px;margin-bottom:10px">
+                        <i class="fas fa-mobile-alt"></i> Pagar con Mercado Pago
+                    </button>
+                    <button class="btn btn-outline" onclick="registrarPagoManual(${deuda})" style="width:100%;padding:14px">
+                        <i class="fas fa-money-bill"></i> Ya transferí o pagué en efectivo
+                    </button>
+                ` : `<div class="no-items">¡Estás al día! No tenés cargos pendientes.</div>`}
+            `;
+
+            if (historial) {
+                const cargosSnap = await db.collection(COL.CARGOS_MANT).where('comercianteId', '==', uid).get();
+                if (cargosSnap.empty) {
+                    historial.innerHTML = '<div class="no-items">No hay pagos registrados aún.</div>';
+                } else {
+                    historial.innerHTML = cargosSnap.docs.map(d => {
+                        const c = d.data();
+                        return `
+                        <div class="purchase-item">
+                            <div class="purchase-info">
+                                <h4>${c.mes || 'Mes actual'}</h4>
+                                <p>${c.metodo === 'mercadopago' ? 'Mercado Pago' : 'Transferencia'}</p>
+                            </div>
+                            <div style="text-align:right">
+                                <div class="purchase-total">$${(c.monto||0).toFixed(2)}</div>
+                                <span style="font-size:12px;color:${c.pagado?'var(--success)':'var(--warning)'}">${c.pagado?'✅ Pagado':'⏳ Pendiente'}</span>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            }
+        } catch(e) {
+            panel.innerHTML = `<div class="no-items">Error al calcular: ${e.message}</div>`;
+        }
+    };
+
+    window.registrarPagoManual = async function(monto) {
+        const user = firebase.auth().currentUser;
+        if (!user) return;
+        try {
+            await db.collection(COL.CARGOS_MANT).add({
+                comercianteId: user.uid,
+                monto: monto,
+                fecha: new Date().toISOString(),
+                pagado: false,
+                mes: new Date().toLocaleDateString('es-AR', { month:'long', year:'numeric' }),
+                metodo: 'transferencia'
+            });
+            showToast('✅ Pago registrado. Esperá a que el admin lo apruebe.', 'success');
+            loadSuscripcionPanel(user.uid);
+        } catch(e) { showToast(`Error: ${e.message}`, 'error'); }
+    };
+});
+</script>
+<!-- PARCHE DEFINITIVO: CATÁLOGO Y PAGOS -->
+<script>
+window.addEventListener('load', () => {
+
+    // ==========================================
+    // 1. ARREGLAR EL CATÁLOGO (Nuevo Producto + Imágenes)
+    // ==========================================
+    window.showOfertaForm = function() {
+        const container = document.getElementById('ofertaFormContainer');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div style="background:#f8f8f8;padding:16px;border-radius:12px;margin-bottom:16px;">
+                <h3 style="margin-top:0;font-size:16px;">Nuevo Producto</h3>
+                <div class="form-group">
+                    <label class="form-label">Nombre del producto</label>
+                    <input type="text" id="ofertaNombre" class="form-control" placeholder="Ej: Cerveza Quilmes 1L">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Precio ($)</label>
+                    <input type="number" id="ofertaPrecio" class="form-control" placeholder="1500">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Imagen del producto (URL)</label>
+                    <input type="text" id="ofertaImagen" class="form-control" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Descripción breve</label>
+                    <input type="text" id="ofertaDesc" class="form-control" placeholder="Ej: Pack x6">
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button class="btn btn-primary" onclick="guardarNuevaOferta()" style="flex:1">Guardar Producto</button>
+                    <button class="btn btn-outline" onclick="document.getElementById('ofertaFormContainer').innerHTML=''" style="flex:1">Cancelar</button>
+                </div>
+            </div>
+        `;
+    };
+
+    window.guardarNuevaOferta = async function() {
+        const user = firebase.auth().currentUser;
+        if (!user) return;
+
+        const nombre = document.getElementById('ofertaNombre').value.trim();
+        const precio = parseFloat(document.getElementById('ofertaPrecio').value);
+        const imagen = document.getElementById('ofertaImagen').value.trim();
+        const desc = document.getElementById('ofertaDesc').value.trim();
+
+        if (!nombre || !precio) {
+            showToast('Completá el nombre y el precio', 'warning');
+            return;
+        }
+
+        try {
+            await db.collection(COL.PERFILES_COMERCIOS).doc(user.uid).collection(COL.OFERTAS).add({
+                nombre: nombre,
+                precio: precio,
+                imagen: imagen,
+                descripcion: desc,
+                activo: true,
+                categoria: 'General',
+                createdAt: new Date().toISOString()
+            });
+            showToast('✅ Producto guardado', 'success');
+            document.getElementById('ofertaFormContainer').innerHTML = '';
+            
+            if (typeof loadOfertasComerciante === 'function') {
+                loadOfertasComerciante(user.uid);
+            }
+        } catch(e) {
+            showToast(`Error: ${e.message}`, 'error');
+        }
+    };
+
+    // ==========================================
+    // 2. ARREGLAR EL PAGO (Confirmar pago)
+    // ==========================================
+    window.confirmPayment = async function() {
+        const state = window.AppState || {};
+        const purchaseId = state.payment?.purchaseId;
+        const selectedMethod = state.payment?.selectedMethod;
+        
+        if (!purchaseId || !selectedMethod) {
+            showToast('Seleccioná una compra y un método de pago', 'warning');
+            return;
+        }
+
+        const user = firebase.auth().currentUser;
+        const btn = document.getElementById('confirmPaymentBtn');
+        
+        if (btn) { btn.disabled = true; btn.innerHTML = 'Procesando...'; }
+
+        try {
+            const select = document.getElementById('purchaseToPaySelect');
+            const opt = select?.options[select.selectedIndex];
+            const amount = parseFloat(opt?.dataset.total || 0);
+            const cid = opt?.dataset.comercianteId || '';
+
+            const payData = {
+                purchaseId: purchaseId,
+                userId: user.uid,
+                userEmail: user.email,
+                comercianteId: cid,
+                amount: amount,
+                method: selectedMethod,
+                approved: false,
+                rejected: false,
+                date: new Date().toISOString()
+            };
+
+            if (selectedMethod === 'transferencia') {
+                const comp = document.getElementById('comprobanteNumber')?.value?.trim();
+                const mnt = parseFloat(document.getElementById('paymentAmount')?.value);
+                if (!comp) throw new Error('Ingresá el número de comprobante');
+                payData.comprobante = comp;
+                payData.amount = mnt || amount;
+            }
+
+            await db.collection(COL.PAYMENTS).add(payData);
+            
+            document.getElementById('paymentModal').style.display = 'none';
+            
+            const notif = document.getElementById('paymentNotification');
+            if (notif) {
+                document.getElementById('notificationMessage').textContent = `Pago de $${amount.toFixed(2)} registrado`;
+                notif.style.display = 'flex';
+            }
+
+            if (typeof loadClientPurchases === 'function') {
+                loadClientPurchases(user.uid);
+            }
+            if (typeof loadPaymentHistory === 'function') {
+                loadPaymentHistory(user.uid);
+            }
+
+        } catch(e) {
+            showToast(`Error: ${e.message}`, 'error');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = 'Confirmar Pago'; }
+        }
+    };
 });
 </script>
 </body>
