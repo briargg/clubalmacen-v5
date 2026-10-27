@@ -194,14 +194,20 @@ body {
     color: var(--primary);
     border: 2px solid var(--primary);
 }
-.btn-secondary:hover { background: rgba(224, 0, 0, 0.05); }
-.btn-success { background: var(--success); color: white; }
-.btn-outline {
-    background: transparent;
-    color: var(--text-dark);
-    border: 2px solid var(--border);
+.btn-secondary {
+    background: #ffffff;
+    color: var(--primary) !important; /* Fuerza el texto rojo */
+    border: 2px solid var(--primary) !important; /* Borde rojo */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
-.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+.btn-secondary:hover { 
+    background: rgba(224, 0, 0, 0.05); 
+    color: var(--primary) !important; /* Mantiene el texto rojo en hover */
+}
 .btn-outline.active {
     background: var(--primary);
     color: white;
